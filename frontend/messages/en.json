@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "home": "Home",
+    "admin": "Admin",
+    "tourism": "Tourism",
+    "destinations": "Destinations",
+    "maps": "Maps",
+    "map": "Map",
+    "pricing": "Pricing",
+    "subscription": "Membership",
+    "tourism-companies": "Tourism Companies",
+    "about": "About",
+    "planCta": "Plan Suggestion",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "hi": "Hi",
+    "toggleLanguage": "Switch language"
+  },
+  "activities": {
+    "priceLabel": "Price",
+    "noPriceLabel": "N/A"
+  },
+  "tourismPage": {
+    "brand": "Egypt Panorama",
+    "heroTitlePrefix": "Types of",
+    "heroTitleHighlight": "Tourism",
+    "heroTitleSuffix": "in Egypt",
+    "heroDescription": "Four distinct worlds of travel experience across Egypt's ancient monuments, sacred heritage, extraordinary coastlines, and untouched natural landscapes.",
+    "categoriesLabel": "Tourism Categories",
+    "exploreCategory": "Explore Category",
+    "untoldSignature": "Egypt Panorama Signature Segment",
+    "untoldExclusive": "Exclusive Feature",
+    "untoldTitlePrefix": "Egypt",
+    "untoldTitleHighlight": "Untold",
+    "untoldSubtitle": "The Egypt that most of the world has never seen",
+    "untoldCta": "Enter Egypt Untold",
+    "bottomLabel": "Ready to Explore?",
+    "bottomTitlePrefix": "Find Your Perfect",
+    "bottomTitleHighlight": "Destination",
+    "bottomDescription": "Browse all of Egypt's destinations or generate a personalised travel plan in seconds.",
+    "browseDestinations": "Browse Destinations",
+    "planMyTrip": "Plan My Trip"
+  }
+}

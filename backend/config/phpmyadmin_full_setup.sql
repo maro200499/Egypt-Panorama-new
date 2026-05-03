@@ -69,6 +69,172 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- 2b) Ensure activities.rating and activities.price exist for map popups
+SET @has_activity_rating_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'activities'
+    AND column_name = 'rating'
+);
+SET @sql := IF(@has_activity_rating_col = 0,
+  'ALTER TABLE `activities` ADD COLUMN `rating` DECIMAL(2,1) NOT NULL DEFAULT 4.0 AFTER `longitude`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_activity_price_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'activities'
+    AND column_name = 'price'
+);
+SET @sql := IF(@has_activity_price_col = 0,
+  'ALTER TABLE `activities` ADD COLUMN `price` VARCHAR(80) NOT NULL DEFAULT ''N/A'' AFTER `rating`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_activity_image_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'activities'
+    AND column_name = 'image_url'
+);
+SET @sql := IF(@has_activity_image_col = 0,
+  'ALTER TABLE `activities` ADD COLUMN `image_url` VARCHAR(500) NULL AFTER `price`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_activity_category_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'activities'
+    AND column_name = 'category'
+);
+SET @sql := IF(@has_activity_category_col = 0,
+  'ALTER TABLE `activities` ADD COLUMN `category` VARCHAR(100) NOT NULL DEFAULT ''Cultural'' AFTER `type`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_activity_hidden_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'activities'
+    AND column_name = 'is_hidden'
+);
+SET @sql := IF(@has_activity_hidden_col = 0,
+  'ALTER TABLE `activities` ADD COLUMN `is_hidden` TINYINT(1) NOT NULL DEFAULT 0 AFTER `image_url`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_city_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'city'
+);
+SET @sql := IF(@has_destination_city_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `city` VARCHAR(120) NOT NULL DEFAULT ''Egypt'' AFTER `name`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_lat_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'latitude'
+);
+SET @sql := IF(@has_destination_lat_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `latitude` DECIMAL(10,8) NULL AFTER `city`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_lng_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'longitude'
+);
+SET @sql := IF(@has_destination_lng_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `longitude` DECIMAL(11,8) NULL AFTER `latitude`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_type_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'type'
+);
+SET @sql := IF(@has_destination_type_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `type` VARCHAR(80) NOT NULL DEFAULT ''Cultural'' AFTER `longitude`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_cover_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'cover_image'
+);
+SET @sql := IF(@has_destination_cover_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `cover_image` VARCHAR(500) NULL AFTER `type`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_destination_gallery_col := (
+  SELECT COUNT(*)
+  FROM information_schema.columns
+  WHERE table_schema = DATABASE()
+    AND table_name = 'destinations'
+    AND column_name = 'gallery_images'
+);
+SET @sql := IF(@has_destination_gallery_col = 0,
+  'ALTER TABLE `destinations` ADD COLUMN `gallery_images` TEXT NULL AFTER `cover_image`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
 -- 3) Seed required tourism companies in companies table
 INSERT INTO `companies` (`name`)
 SELECT src.company_name

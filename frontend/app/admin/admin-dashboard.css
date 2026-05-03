@@ -1,0 +1,101 @@
+.admin-dashboard {
+  --admin-bg-start: #fffaf0;
+  --admin-bg-mid: #f8f1df;
+  --admin-bg-end: #e8f3fb;
+  --admin-panel: rgba(255, 255, 255, 0.72);
+  --admin-border: rgba(148, 105, 38, 0.24);
+  --admin-primary: #8b5e1a;
+  --admin-primary-soft: #b88332;
+  --admin-positive: #157347;
+  --admin-warning: #9a5b13;
+  --admin-danger: #b02a37;
+}
+
+.admin-dashboard {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(251, 191, 36, 0.2), transparent 32%),
+    radial-gradient(circle at 90% 20%, rgba(14, 116, 144, 0.16), transparent 26%),
+    linear-gradient(130deg, var(--admin-bg-start) 0%, var(--admin-bg-mid) 48%, var(--admin-bg-end) 100%);
+}
+
+.admin-title {
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.admin-slab {
+  font-family: "Rockwell", "Roboto Slab", serif;
+}
+
+.admin-panel {
+  background: var(--admin-panel);
+  border: 1px solid var(--admin-border);
+  backdrop-filter: blur(10px);
+}
+
+.admin-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-shimmer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.28) 40%, transparent 65%);
+  transform: translateX(-130%);
+  animation: admin-sweep 4.8s ease-in-out infinite;
+}
+
+.admin-reveal {
+  opacity: 0;
+  transform: translateY(16px) scale(0.985);
+  animation: admin-reveal-up 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.admin-reveal-delay-1 {
+  animation-delay: 90ms;
+}
+
+.admin-reveal-delay-2 {
+  animation-delay: 160ms;
+}
+
+.admin-reveal-delay-3 {
+  animation-delay: 230ms;
+}
+
+.admin-reveal-delay-4 {
+  animation-delay: 300ms;
+}
+
+@keyframes admin-reveal-up {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes admin-sweep {
+  0% {
+    transform: translateX(-130%);
+  }
+  45% {
+    transform: translateX(130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .admin-shimmer::before {
+    animation: none;
+  }
+}

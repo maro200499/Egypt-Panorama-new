@@ -60,10 +60,40 @@ function resolveDestinationsSchema(PDO $pdo): array
         throw new RuntimeException('No destination name column found (expected name or NAME)');
     }
 
+    if (!columnExists($pdo, 'destinations', 'city')) {
+        $pdo->exec("ALTER TABLE destinations ADD COLUMN city VARCHAR(120) NOT NULL DEFAULT 'Egypt' AFTER {$nameColumn}");
+    }
+
+    if (!columnExists($pdo, 'destinations', 'latitude')) {
+        $pdo->exec('ALTER TABLE destinations ADD COLUMN latitude DECIMAL(10,8) NULL AFTER city');
+    }
+
+    if (!columnExists($pdo, 'destinations', 'longitude')) {
+        $pdo->exec('ALTER TABLE destinations ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude');
+    }
+
+    if (!columnExists($pdo, 'destinations', 'type')) {
+        $pdo->exec("ALTER TABLE destinations ADD COLUMN type VARCHAR(80) NOT NULL DEFAULT 'Cultural' AFTER longitude");
+    }
+
+    if (!columnExists($pdo, 'destinations', 'cover_image')) {
+        $pdo->exec('ALTER TABLE destinations ADD COLUMN cover_image VARCHAR(500) NULL AFTER type');
+    }
+
+    if (!columnExists($pdo, 'destinations', 'gallery_images')) {
+        $pdo->exec('ALTER TABLE destinations ADD COLUMN gallery_images TEXT NULL AFTER cover_image');
+    }
+
     $cache = [
         'table' => 'destinations',
         'id' => $idColumn,
         'name' => $nameColumn,
+        'city' => 'city',
+        'latitude' => 'latitude',
+        'longitude' => 'longitude',
+        'type' => 'type',
+        'cover_image' => 'cover_image',
+        'gallery_images' => 'gallery_images',
     ];
 
     return $cache;
@@ -72,18 +102,58 @@ function resolveDestinationsSchema(PDO $pdo): array
 function ensureActivitiesTable(PDO $pdo): void
 {
     if (tableExists($pdo, 'activities')) {
+        if (!columnExists($pdo, 'activities', 'company_id')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN company_id INT UNSIGNED NULL AFTER destination_id');
+        }
+
+        if (!columnExists($pdo, 'activities', 'latitude')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN latitude DECIMAL(10,8) NULL AFTER company_id');
+        }
+
+        if (!columnExists($pdo, 'activities', 'longitude')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN longitude DECIMAL(11,8) NULL AFTER latitude');
+        }
+
+        if (!columnExists($pdo, 'activities', 'category')) {
+            $pdo->exec("ALTER TABLE activities ADD COLUMN category VARCHAR(100) NOT NULL DEFAULT 'Cultural' AFTER type");
+        }
+
+        if (!columnExists($pdo, 'activities', 'rating')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN rating DECIMAL(2,1) NOT NULL DEFAULT 4.0 AFTER longitude');
+        }
+
+        if (!columnExists($pdo, 'activities', 'price')) {
+            $pdo->exec("ALTER TABLE activities ADD COLUMN price VARCHAR(80) NOT NULL DEFAULT 'N/A' AFTER rating");
+        }
+
+        if (!columnExists($pdo, 'activities', 'image_url')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN image_url VARCHAR(500) NULL AFTER price');
+        }
+
+        if (!columnExists($pdo, 'activities', 'is_hidden')) {
+            $pdo->exec('ALTER TABLE activities ADD COLUMN is_hidden TINYINT(1) NOT NULL DEFAULT 0 AFTER image_url');
+        }
+
         return;
     }
 
     $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS activities (
+        "CREATE TABLE IF NOT EXISTS activities (
             id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(180) NOT NULL,
             type VARCHAR(100) NOT NULL,
+            category VARCHAR(100) NOT NULL DEFAULT 'Cultural',
             destination_id INT NOT NULL,
+            company_id INT UNSIGNED NULL,
+            latitude DECIMAL(10,8) NULL,
+            longitude DECIMAL(11,8) NULL,
+            rating DECIMAL(2,1) NOT NULL DEFAULT 4.0,
+            price VARCHAR(80) NOT NULL DEFAULT 'N/A',
+            image_url VARCHAR(500) NULL,
+            is_hidden TINYINT(1) NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
 }
 
@@ -101,7 +171,7 @@ function resolveActivitiesSchema(PDO $pdo): array
         throw new RuntimeException('activities table is missing');
     }
 
-    $required = ['id', 'name', 'type', 'destination_id'];
+    $required = ['id', 'name', 'type', 'category', 'destination_id', 'rating', 'price', 'is_hidden'];
 
     foreach ($required as $column) {
         if (!columnExists($pdo, 'activities', $column)) {
@@ -115,9 +185,57 @@ function resolveActivitiesSchema(PDO $pdo): array
         'name' => 'name',
         'type' => 'type',
         'destination_id' => 'destination_id',
+        'category' => 'category',
+        'latitude' => 'latitude',
+        'longitude' => 'longitude',
+        'rating' => 'rating',
+        'price' => 'price',
+        'image_url' => 'image_url',
+        'is_hidden' => 'is_hidden',
     ];
 
     return $cache;
+}
+
+function ensureActivityReviewsTable(PDO $pdo): void
+{
+    if (tableExists($pdo, 'activity_reviews')) {
+        if (!columnExists($pdo, 'activity_reviews', 'activity_id')) {
+            $pdo->exec('ALTER TABLE activity_reviews ADD COLUMN activity_id INT UNSIGNED NOT NULL AFTER id');
+        }
+
+        if (!columnExists($pdo, 'activity_reviews', 'user_id')) {
+            $pdo->exec('ALTER TABLE activity_reviews ADD COLUMN user_id INT UNSIGNED NULL AFTER activity_id');
+        }
+
+        if (!columnExists($pdo, 'activity_reviews', 'rating')) {
+            $pdo->exec('ALTER TABLE activity_reviews ADD COLUMN rating TINYINT UNSIGNED NOT NULL AFTER user_id');
+        }
+
+        if (!columnExists($pdo, 'activity_reviews', 'comment')) {
+            $pdo->exec('ALTER TABLE activity_reviews ADD COLUMN comment TEXT NOT NULL AFTER rating');
+        }
+
+        if (!columnExists($pdo, 'activity_reviews', 'created_at')) {
+            $pdo->exec('ALTER TABLE activity_reviews ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER comment');
+        }
+
+        return;
+    }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS activity_reviews (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            activity_id INT UNSIGNED NOT NULL,
+            user_id INT UNSIGNED NULL,
+            rating TINYINT UNSIGNED NOT NULL,
+            comment TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_activity_reviews_activity_id (activity_id),
+            INDEX idx_activity_reviews_user_id (user_id),
+            INDEX idx_activity_reviews_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
 }
 
 function resolveUsersSchema(PDO $pdo): array

@@ -32,7 +32,12 @@ try {
     $activityId = quoteIdentifier($activitiesSchema['id']);
     $activityName = quoteIdentifier($activitiesSchema['name']);
     $activityType = quoteIdentifier($activitiesSchema['type']);
+    $activityCategory = quoteIdentifier($activitiesSchema['category']);
     $activityDestinationId = quoteIdentifier($activitiesSchema['destination_id']);
+    $activityRating = quoteIdentifier($activitiesSchema['rating']);
+    $activityPrice = quoteIdentifier($activitiesSchema['price']);
+    $activityImageUrl = quoteIdentifier($activitiesSchema['image_url']);
+    $activityHidden = quoteIdentifier($activitiesSchema['is_hidden']);
     $destinationId = quoteIdentifier($destinationsSchema['id']);
     $destinationName = quoteIdentifier($destinationsSchema['name']);
 
@@ -42,7 +47,10 @@ try {
         }
 
         $sql = "SELECT a.{$activityId} AS id, a.{$activityName} AS name, a.{$activityType} AS type,
-                       a.{$activityDestinationId} AS destination_id, d.{$destinationName} AS destination_name
+                   a.{$activityCategory} AS category, a.{$activityDestinationId} AS destination_id,
+                   d.{$destinationName} AS destination_name, a.{$activityRating} AS rating,
+                         a.{$activityPrice} AS price, TRIM(a.{$activityImageUrl}) AS image_url, a.{$activityHidden} AS is_hidden,
+                   a.latitude AS latitude, a.longitude AS longitude
                 FROM {$activitiesTable} a
                 INNER JOIN {$destinationsTable} d ON d.{$destinationId} = a.{$activityDestinationId}
                 WHERE a.{$activityDestinationId} = :destination_id
@@ -52,7 +60,10 @@ try {
         $stmt->execute([':destination_id' => (int)$destinationIdInput]);
     } else {
         $sql = "SELECT a.{$activityId} AS id, a.{$activityName} AS name, a.{$activityType} AS type,
-                       a.{$activityDestinationId} AS destination_id, d.{$destinationName} AS destination_name
+                   a.{$activityCategory} AS category, a.{$activityDestinationId} AS destination_id,
+                   d.{$destinationName} AS destination_name, a.{$activityRating} AS rating,
+                         a.{$activityPrice} AS price, TRIM(a.{$activityImageUrl}) AS image_url, a.{$activityHidden} AS is_hidden,
+                   a.latitude AS latitude, a.longitude AS longitude
                 FROM {$activitiesTable} a
                 INNER JOIN {$destinationsTable} d ON d.{$destinationId} = a.{$activityDestinationId}
                 WHERE d.{$destinationName} = :destination_name

@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "admin": "لوحة التحكم",
+    "tourism": "السياحة",
+    "destinations": "الوجهات",
+    "maps": "الخرائط",
+    "map": "الخريطة",
+    "pricing": "الأسعار",
+    "subscription": "العضوية",
+    "tourism-companies": "شركات السياحة",
+    "about": "من نحن",
+    "planCta": "اقتراح خطة",
+    "login": "تسجيل الدخول",
+    "signup": "انشاء حساب",
+    "logout": "تسجيل الخروج",
+    "hi": "مرحبا",
+    "toggleLanguage": "تغيير اللغة"
+  },
+  "activities": {
+    "priceLabel": "السعر",
+    "noPriceLabel": "غير متوفر"
+  },
+  "tourismPage": {
+    "brand": "ايجيبت بانوراما",
+    "heroTitlePrefix": "انواع",
+    "heroTitleHighlight": "السياحة",
+    "heroTitleSuffix": "في مصر",
+    "heroDescription": "اربعة عوالم مختلفة من تجارب السفر عبر اثار مصر القديمة وتراثها الديني وسواحلها المميزة وطبيعتها البكر.",
+    "categoriesLabel": "تصنيفات السياحة",
+    "exploreCategory": "استكشف التصنيف",
+    "untoldSignature": "قسم مميز من ايجيبت بانوراما",
+    "untoldExclusive": "ميزة حصرية",
+    "untoldTitlePrefix": "مصر",
+    "untoldTitleHighlight": "الخفيه",
+    "untoldSubtitle": "مصر التي لم يرها معظم العالم",
+    "untoldCta": "ادخل مصر الخفيه",
+    "bottomLabel": "جاهز للاستكشاف؟",
+    "bottomTitlePrefix": "اعثر على",
+    "bottomTitleHighlight": "وجهتك المثالية",
+    "bottomDescription": "تصفح كل وجهات مصر او انشئ خطة رحلة شخصية في ثوان.",
+    "browseDestinations": "تصفح الوجهات",
+    "planMyTrip": "خطط رحلتي"
+  }
+  }
+}

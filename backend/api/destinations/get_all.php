@@ -12,8 +12,18 @@ try {
     $table = quoteIdentifier($schema['table']);
     $idColumn = quoteIdentifier($schema['id']);
     $nameColumn = quoteIdentifier($schema['name']);
+    $cityColumn = quoteIdentifier($schema['city']);
+    $latitudeColumn = quoteIdentifier($schema['latitude']);
+    $longitudeColumn = quoteIdentifier($schema['longitude']);
+    $typeColumn = quoteIdentifier($schema['type']);
+    $coverImageColumn = quoteIdentifier($schema['cover_image']);
+    $galleryImagesColumn = quoteIdentifier($schema['gallery_images']);
 
-    $sql = "SELECT {$idColumn} AS id, {$nameColumn} AS name FROM {$table} ORDER BY {$nameColumn} ASC";
+    $sql = "SELECT {$idColumn} AS id, {$nameColumn} AS name, {$cityColumn} AS city,
+               {$latitudeColumn} AS latitude, {$longitudeColumn} AS longitude,
+               {$typeColumn} AS type, {$coverImageColumn} AS cover_image,
+               {$galleryImagesColumn} AS gallery_images
+            FROM {$table} ORDER BY {$nameColumn} ASC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
 

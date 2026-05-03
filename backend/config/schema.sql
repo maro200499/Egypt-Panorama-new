@@ -12,6 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS destinations (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL UNIQUE,
+    city VARCHAR(120) NOT NULL DEFAULT 'Egypt',
+    latitude DECIMAL(10,7) NULL,
+    longitude DECIMAL(10,7) NULL,
+    type VARCHAR(80) NOT NULL DEFAULT 'Cultural',
+    cover_image VARCHAR(500) NULL,
+    gallery_images TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -20,7 +26,15 @@ CREATE TABLE IF NOT EXISTS activities (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(180) NOT NULL,
     type VARCHAR(100) NOT NULL,
+    category VARCHAR(100) NOT NULL DEFAULT 'Cultural',
     destination_id INT UNSIGNED NOT NULL,
+    company_id INT UNSIGNED NULL,
+    rating DECIMAL(2,1) NOT NULL DEFAULT 4.0,
+    price VARCHAR(80) NOT NULL DEFAULT 'N/A',
+    image_url VARCHAR(500) NULL,
+    latitude DECIMAL(10,7) NULL,
+    longitude DECIMAL(10,7) NULL,
+    is_hidden TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_activities_destination FOREIGN KEY (destination_id)
@@ -53,6 +67,24 @@ CREATE TABLE IF NOT EXISTS reviews (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     CONSTRAINT chk_rating_range CHECK (rating BETWEEN 1 AND 5)
+);
+
+CREATE TABLE IF NOT EXISTS activity_reviews (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    activity_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED,
+    rating DECIMAL(2,1) NOT NULL DEFAULT 4.0,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_activity_reviews_activity FOREIGN KEY (activity_id)
+        REFERENCES activities(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_activity_reviews_user FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (

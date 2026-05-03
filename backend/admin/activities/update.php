@@ -25,6 +25,9 @@ try {
     $activityNameColumn = quoteIdentifier($activitiesSchema['name']);
     $activityTypeColumn = quoteIdentifier($activitiesSchema['type']);
     $activityDestinationIdColumn = quoteIdentifier($activitiesSchema['destination_id']);
+    $activityRatingColumn = quoteIdentifier($activitiesSchema['rating']);
+    $activityPriceColumn = quoteIdentifier($activitiesSchema['price']);
+    $activityImageUrlColumn = quoteIdentifier($activitiesSchema['image_url']);
 
     $destinationsTable = quoteIdentifier($destinationsSchema['table']);
     $destinationIdColumn = quoteIdentifier($destinationsSchema['id']);
@@ -66,6 +69,30 @@ try {
 
         $fields[] = "{$activityDestinationIdColumn} = :destination_id";
         $params[':destination_id'] = $destinationId;
+    }
+
+    if (array_key_exists('rating', $input)) {
+        $rating = (float)$input['rating'];
+        if ($rating < 0 || $rating > 5) {
+            errorResponse('rating must be between 0 and 5', 422);
+        }
+        $fields[] = "{$activityRatingColumn} = :rating";
+        $params[':rating'] = $rating;
+    }
+
+    if (array_key_exists('price', $input)) {
+        $price = trim((string)$input['price']);
+        if ($price === '') {
+            $price = 'N/A';
+        }
+        $fields[] = "{$activityPriceColumn} = :price";
+        $params[':price'] = $price;
+    }
+
+    if (array_key_exists('image_url', $input)) {
+        $imageUrl = trim((string)$input['image_url']);
+        $fields[] = "{$activityImageUrlColumn} = :image_url";
+        $params[':image_url'] = $imageUrl === '' ? null : $imageUrl;
     }
 
     if ($fields === []) {

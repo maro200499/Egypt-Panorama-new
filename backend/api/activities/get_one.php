@@ -22,16 +22,61 @@ try {
     $activityId = quoteIdentifier($activitiesSchema['id']);
     $activityName = quoteIdentifier($activitiesSchema['name']);
     $activityType = quoteIdentifier($activitiesSchema['type']);
+    $activityCategory = quoteIdentifier($activitiesSchema['category']);
     $activityDestinationId = quoteIdentifier($activitiesSchema['destination_id']);
+    $activityRating = quoteIdentifier($activitiesSchema['rating']);
+    $activityPrice = quoteIdentifier($activitiesSchema['price']);
+    $activityImageUrl = quoteIdentifier($activitiesSchema['image_url']);
+    $activityLatitude = quoteIdentifier($activitiesSchema['latitude']);
+    $activityLongitude = quoteIdentifier($activitiesSchema['longitude']);
+    $activityHidden = quoteIdentifier($activitiesSchema['is_hidden']);
     $destinationId = quoteIdentifier($destinationsSchema['id']);
     $destinationName = quoteIdentifier($destinationsSchema['name']);
 
-    $sql = "SELECT a.{$activityId} AS id, a.{$activityName} AS name, a.{$activityType} AS type,
-                   a.{$activityDestinationId} AS destination_id, d.{$destinationName} AS destination_name
-            FROM {$activitiesTable} a
-            INNER JOIN {$destinationsTable} d ON d.{$destinationId} = a.{$activityDestinationId}
-            WHERE a.{$activityId} = :id
-            LIMIT 1";
+    // Check for description and audio_url columns
+    $hasTourismType = columnExists($pdo, $activitiesSchema['table'], 'tourism_type');
+    $hasDescription = columnExists($pdo, $activitiesSchema['table'], 'description');
+    $hasAudioUrl = columnExists($pdo, $activitiesSchema['table'], 'audio_url');
+
+    $selectParts = [
+        "a.{$activityId} AS id",
+        "a.{$activityName} AS name",
+        "a.{$activityType} AS type",
+        "a.{$activityCategory} AS category",
+        "a.{$activityDestinationId} AS destination_id",
+        "d.{$destinationName} AS destination_name",
+        "a.{$activityRating} AS rating",
+        "a.{$activityPrice} AS price",
+        "TRIM(a.{$activityImageUrl}) AS image_url",
+        "a.{$activityLatitude} AS latitude",
+        "a.{$activityLongitude} AS longitude",
+        "a.{$activityHidden} AS is_hidden",
+        "a.created_at",
+        "a.updated_at"
+    ];
+
+    if ($hasTourismType) {
+        $activityTourismType = quoteIdentifier('tourism_type');
+        $selectParts[] = "a.{$activityTourismType} AS tourism_type";
+    }
+
+    if ($hasDescription) {
+        $activityDescription = quoteIdentifier('description');
+        $selectParts[] = "a.{$activityDescription} AS description";
+    }
+
+    if ($hasAudioUrl) {
+        $activityAudioUrl = quoteIdentifier('audio_url');
+        $selectParts[] = "a.{$activityAudioUrl} AS audio_url";
+    }
+
+    $selectClause = implode(', ', $selectParts);
+
+    $sql = "SELECT {$selectClause}
+             FROM {$activitiesTable} a
+             INNER JOIN {$destinationsTable} d ON d.{$destinationId} = a.{$activityDestinationId}
+             WHERE a.{$activityId} = :id
+             LIMIT 1";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id' => $id]);

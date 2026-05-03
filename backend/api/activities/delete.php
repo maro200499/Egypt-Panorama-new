@@ -3,9 +3,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config/bootstrap.php';
 
-requireMethod('GET');
+if (!in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST', 'DELETE'], true)) {
+	errorResponse('Method not allowed', 405);
+}
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$input = $_SERVER['REQUEST_METHOD'] === 'GET' ? $_GET : getJsonInput();
+$id = isset($input['id']) ? (int)$input['id'] : 0;
 
 if ($id <= 0) {
 	errorResponse('Invalid activity id', 422);
@@ -26,7 +29,7 @@ try {
 		errorResponse('Activity not found', 404);
 	}
 
-	successResponse(null, 'Activity deleted successfully', 200);
+	successResponse(['id' => $id], 'Activity deleted successfully', 200);
 } catch (PDOException $e) {
 	error_log('Database error while deleting activity: ' . $e->getMessage());
 	dbErrorResponse($e, 500);

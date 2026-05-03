@@ -24,7 +24,12 @@ try {
 	$activityId = quoteIdentifier($activitiesSchema['id']);
 	$activityNameColumn = quoteIdentifier($activitiesSchema['name']);
 	$activityTypeColumn = quoteIdentifier($activitiesSchema['type']);
+	$activityCategoryColumn = quoteIdentifier($activitiesSchema['category']);
 	$activityDestinationIdColumn = quoteIdentifier($activitiesSchema['destination_id']);
+	$activityRatingColumn = quoteIdentifier($activitiesSchema['rating']);
+	$activityPriceColumn = quoteIdentifier($activitiesSchema['price']);
+	$activityImageUrlColumn = quoteIdentifier($activitiesSchema['image_url']);
+	$activityHiddenColumn = quoteIdentifier($activitiesSchema['is_hidden']);
 	$activityCompanyIdColumn = quoteIdentifier('company_id');
 
 	$destinationsTable = quoteIdentifier($destinationsSchema['table']);
@@ -52,6 +57,15 @@ try {
 		$params[':type'] = $type;
 	}
 
+	if (array_key_exists('category', $input)) {
+		$category = cleanString($input['category']);
+		if ($category === '') {
+			errorResponse('category cannot be empty', 422);
+		}
+		$fields[] = "{$activityCategoryColumn} = :category";
+		$params[':category'] = $category;
+	}
+
 	if (array_key_exists('destination_id', $input)) {
 		$destinationId = (int)$input['destination_id'];
 		if ($destinationId <= 0) {
@@ -70,6 +84,35 @@ try {
 		$params[':destination_id'] = $destinationId;
 	}
 
+	if (array_key_exists('rating', $input)) {
+		$rating = (float)$input['rating'];
+		if ($rating < 0 || $rating > 5) {
+			errorResponse('rating must be between 0 and 5', 422);
+		}
+		$fields[] = "{$activityRatingColumn} = :rating";
+		$params[':rating'] = $rating;
+	}
+
+	if (array_key_exists('price', $input)) {
+		$price = trim((string)$input['price']);
+		if ($price === '') {
+			$price = 'N/A';
+		}
+		$fields[] = "{$activityPriceColumn} = :price";
+		$params[':price'] = $price;
+	}
+
+	if (array_key_exists('image_url', $input)) {
+		$imageUrl = trim((string)$input['image_url']);
+		$fields[] = "{$activityImageUrlColumn} = :image_url";
+		$params[':image_url'] = $imageUrl === '' ? null : $imageUrl;
+	}
+
+	if (array_key_exists('is_hidden', $input)) {
+		$fields[] = "{$activityHiddenColumn} = :is_hidden";
+		$params[':is_hidden'] = !empty($input['is_hidden']) ? 1 : 0;
+	}
+
 	if ($fields === []) {
 		errorResponse('No fields provided for update', 422);
 	}
@@ -78,7 +121,12 @@ try {
 		a.{$activityId} AS id,
 		a.{$activityNameColumn} AS name,
 		a.{$activityTypeColumn} AS type,
+		a.{$activityCategoryColumn} AS category,
 		a.{$activityDestinationIdColumn} AS destination_id,
+		a.{$activityRatingColumn} AS rating,
+		a.{$activityPriceColumn} AS price,
+		a.{$activityImageUrlColumn} AS image_url,
+		a.{$activityHiddenColumn} AS is_hidden,
 		d.{$destinationNameColumn} AS destination_name
 		FROM {$activitiesTable} a
 		INNER JOIN {$destinationsTable} d ON d.{$destinationIdColumn} = a.{$activityDestinationIdColumn}
@@ -94,7 +142,12 @@ try {
 
 	$effectiveName = array_key_exists('name', $input) ? $params[':name'] : (string)$currentActivity['name'];
 	$effectiveType = array_key_exists('type', $input) ? $params[':type'] : (string)$currentActivity['type'];
+	$effectiveCategory = array_key_exists('category', $input) ? $params[':category'] : (string)$currentActivity['category'];
 	$effectiveDestinationName = (string)$currentActivity['destination_name'];
+	$effectiveRating = array_key_exists('rating', $input) ? (float)$params[':rating'] : (float)$currentActivity['rating'];
+	$effectivePrice = array_key_exists('price', $input) ? (string)$params[':price'] : (string)$currentActivity['price'];
+	$effectiveImageUrl = array_key_exists('image_url', $input) ? $params[':image_url'] : ($currentActivity['image_url'] ?? null);
+	$effectiveHidden = array_key_exists('is_hidden', $input) ? (int)$params[':is_hidden'] : (int)$currentActivity['is_hidden'];
 
 	if (array_key_exists('destination_id', $input)) {
 		$destinationNameSql = "SELECT {$destinationNameColumn} AS name
@@ -119,6 +172,12 @@ try {
 		$effectiveName
 	);
 
+	// Keep the computed variables referenced so rating/price remain part of the update payload flow.
+	$params[':rating'] = $effectiveRating;
+	$params[':price'] = $effectivePrice;
+	$params[':image_url'] = $effectiveImageUrl;
+	$params[':is_hidden'] = $effectiveHidden;
+
 	$fields[] = "{$activityCompanyIdColumn} = :company_id";
 	$params[':company_id'] = $assignedCompanyId;
 
@@ -126,7 +185,18 @@ try {
 	$updateStmt = $pdo->prepare($sql);
 	$updateStmt->execute($params);
 
-	successResponse(null, 'Activity updated successfully', 200);
+	successResponse([
+		'id' => $id,
+		'name' => $effectiveName,
+		'type' => $effectiveType,
+		'category' => $effectiveCategory,
+		'destination_id' => array_key_exists('destination_id', $input) ? (int)$params[':destination_id'] : (int)$currentActivity['destination_id'],
+		'rating' => $effectiveRating,
+		'price' => $effectivePrice,
+		'image_url' => $effectiveImageUrl,
+		'is_hidden' => $effectiveHidden,
+		'company_id' => $assignedCompanyId,
+	], 'Activity updated successfully', 200);
 } catch (PDOException $e) {
 	error_log('Database error while updating activity: ' . $e->getMessage());
 	dbErrorResponse($e, 500);
