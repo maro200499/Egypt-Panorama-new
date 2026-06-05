@@ -36,6 +36,9 @@ export const API_ENDPOINTS = {
   tourismDestinations: "/tourism-destinations.php",
   activityReviewsGet: "/activity-reviews/get.php",
   activityReviewsAdd: "/activity-reviews/add.php",
+  adminStats: "/api/admin/stats",
+  adminActivities: "/api/admin/activities",
+  adminUsers: "/api/admin/users",
 } as const;
 
 type ApiEnvelope<T> = {
@@ -106,16 +109,33 @@ export interface ApiActivity {
   id: number | string;
   name: string;
   type: string;
-  tourism_type: string;
+  tourism_type?: string;
   category?: string;
   destination_id: number | string;
-  destination_name: string;
+  destination_name?: string;
   rating?: number | string;
   price?: string;
   image_url?: string | null;
   is_hidden?: number | string | boolean;
   latitude?: number | string | null;
   longitude?: number | string | null;
+  status?: string;
+}
+
+export interface ApiAdminStats {
+  activityCount: number;
+  userCount: number;
+  destCount: number;
+  companyCount: number;
+}
+
+export interface ApiAdminUser {
+  id: number | string;
+  name: string;
+  email: string;
+  country?: string;
+  role: string;
+  joined?: string;
 }
 
 export interface ApiCompany {

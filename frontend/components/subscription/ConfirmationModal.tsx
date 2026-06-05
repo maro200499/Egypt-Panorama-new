@@ -23,7 +23,7 @@ export default function ConfirmationModal({
         <div className="mt-4 rounded-xl border border-amber-100/20 bg-slate-800/70 p-4">
           <p className="text-lg font-bold">{plan.name}</p>
           <p className="text-sm text-amber-100/70">
-            {plan.price} {copy.currency} • {plan.duration} {copy.durationMonths}
+            {copy.currency}{plan.price} • {plan.duration} {copy.durationUnit}
           </p>
         </div>
         <div className="mt-6 flex justify-end gap-3">

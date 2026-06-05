@@ -1,0 +1,35 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FFE19A" />
+      <stop offset="60%" stop-color="#F0B200" />
+      <stop offset="100%" stop-color="#C58200" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FFD39A" />
+      <stop offset="100%" stop-color="#D98A00" />
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <g fill="none" fillRule="evenodd">
+    <!-- Back pyramid (darker tone) -->
+    <path d="M6 50 L32 10 L58 50 Z" fill="url(#gold)" filter="url(#shadow)" />
+
+    <!-- Front face (lighter accent) -->
+    <path d="M32 10 L46 50 L32 36 Z" fill="url(#accent)" opacity="0.98" />
+
+    <!-- Left highlight -->
+    <path d="M18 50 L32 24 L32 36 L18 50 Z" fill="#FFF6DD" opacity="0.12" />
+
+    <!-- Subtle outline -->
+    <path d="M6 50 L32 10 L58 50" stroke="#9A6000" strokeOpacity="0.18" strokeWidth="1" fill="none" />
+
+    <!-- Small central cap -->
+    <path d="M28 50 L32 36 L36 50 Z" fill="#F0B200" />
+  </g>
+</svg>

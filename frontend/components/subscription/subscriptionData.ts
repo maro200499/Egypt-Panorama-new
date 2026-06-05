@@ -3,49 +3,69 @@ import { USER_STORAGE_KEY } from "@/lib/session";
 
 export const PLANS: Plan[] = [
   {
-    id: "basic",
-    name: "Basic",
-    description: "Essential tools to get started with Egypt travel planning.",
-    duration: 1,
-    price: 129,
-    ctaLabel: "Start Now",
+    id: "weekend",
+    name: "Weekend",
+    description: "Best for a quick escape with the essentials covered.",
+    duration: 2,
+    price: 5,
+    icon: "moon",
+    ctaLabel: "Choose",
     features: [
-      { en: "Browse activities", ar: "تصفح الأنشطة" },
-      { en: "Basic trip planning", ar: "تخطيط رحلات أساسي" },
-      { en: "Limited access", ar: "وصول محدود" },
+      { en: "Full access", ar: "وصول كامل" },
+      { en: "Offline maps", ar: "خرائط بدون اتصال" },
     ],
   },
   {
-    id: "standard",
-    name: "Standard",
-    description: "Balanced value for frequent travelers who want smarter planning.",
+    id: "short-trip",
+    name: "Short Trip",
+    description: "A compact plan for a few days of easy travel.",
     duration: 3,
-    price: 299,
+    price: 8,
+    icon: "map",
+    ctaLabel: "Choose",
+    features: [
+      { en: "Full access", ar: "وصول كامل" },
+      { en: "Offline maps", ar: "خرائط بدون اتصال" },
+    ],
+  },
+  {
+    id: "classic",
+    name: "Classic",
+    description: "Our featured pick with trip planning included.",
+    duration: 5,
+    price: 13,
+    icon: "plane",
     popular: true,
     badge: "⭐ Most Popular",
-    ctaLabel: "Get Started",
+    ctaLabel: "Choose",
     features: [
-      { en: "Advanced filters", ar: "فلاتر متقدمة" },
-      { en: "Save trips", ar: "حفظ الرحلات" },
-      { en: "Better recommendations", ar: "توصيات أفضل" },
+      { en: "Full access", ar: "وصول كامل" },
+      { en: "Offline maps", ar: "خرائط بدون اتصال" },
+      { en: "Trip planner", ar: "مخطط الرحلة" },
     ],
   },
   {
-    id: "premium",
-    name: "Premium",
-    description: "The complete premium experience with personalized AI support.",
-    duration: 12,
-    price: 499,
-    badge: "🔥 Best Value",
-    saveLabel: "Save 60%",
-    ctaLabel: "Go Premium",
+    id: "full-journey",
+    name: "Full Journey",
+    description: "A complete long-stay option with premium support.",
+    duration: 7,
+    price: 20,
+    icon: "globe",
+    ctaLabel: "Choose",
     features: [
-      { en: "AI trip planning", ar: "تخطيط رحلات بالذكاء الاصطناعي" },
-      { en: "Personalized recommendations", ar: "توصيات مخصصة" },
+      { en: "Full access", ar: "وصول كامل" },
+      { en: "Offline maps", ar: "خرائط بدون اتصال" },
+      { en: "Trip planner", ar: "مخطط الرحلة" },
       { en: "Priority support", ar: "دعم ذو أولوية" },
     ],
   },
 ];
+
+const LEGACY_PLAN_ALIASES: Record<string, Plan["id"]> = {
+  basic: "weekend",
+  standard: "classic",
+  premium: "full-journey",
+};
 
 function normalizePlanKey(value: string): string {
   return value.trim().toLowerCase().replace(/[\s_-]+/g, "");
@@ -53,12 +73,14 @@ function normalizePlanKey(value: string): string {
 
 export function findPlanByRawValue(rawValue: string): Plan | null {
   const normalized = normalizePlanKey(rawValue);
+  const aliased = LEGACY_PLAN_ALIASES[normalized];
 
   return (
     PLANS.find((plan) => {
       const byId = normalizePlanKey(plan.id) === normalized;
       const byName = normalizePlanKey(plan.name) === normalized;
-      return byId || byName;
+      const byAlias = aliased ? normalizePlanKey(plan.id) === normalizePlanKey(aliased) : false;
+      return byId || byName || byAlias;
     }) ?? null
   );
 }
@@ -69,12 +91,14 @@ export function getLocalizedPlanName(plan: Plan, isAr: boolean): string {
   }
 
   switch (plan.id) {
-    case "basic":
-      return "أساسية";
-    case "standard":
-      return "القياسية";
-    case "premium":
-      return "المميزة";
+    case "weekend":
+      return "عطلة نهاية الأسبوع";
+    case "short-trip":
+      return "رحلة قصيرة";
+    case "classic":
+      return "كلاسيك";
+    case "full-journey":
+      return "الرحلة الكاملة";
     default:
       return plan.name;
   }
@@ -86,12 +110,14 @@ export function getLocalizedPlanDescription(plan: Plan, isAr: boolean): string {
   }
 
   switch (plan.id) {
-    case "basic":
-      return "أدوات أساسية للبدء في تخطيط رحلاتك داخل مصر.";
-    case "standard":
-      return "أفضل توازن بين السعر والمميزات للمسافرين المتكررين.";
-    case "premium":
-      return "تجربة متقدمة كاملة مع تخصيص ودعم أعلى.";
+    case "weekend":
+      return "خيار خفيف لإجازة قصيرة مع الأدوات الأساسية.";
+    case "short-trip":
+      return "مناسب لرحلة سريعة مع خرائط غير متصلة ووصول كامل.";
+    case "classic":
+      return "الخيار المفضل مع مخطط رحلة وأفضل توازن بين القيمة والمزايا.";
+    case "full-journey":
+      return "أقوى باقة لرحلة أطول مع دعم أولوية وتجربة كاملة.";
     default:
       return plan.description;
   }
@@ -113,33 +139,34 @@ export function getLocalizedPlanFeatures(plan: Plan, isAr: boolean): string[] {
 
 export function getCopy(isAr: boolean): SubscriptionCopy {
   return {
-    eyebrow: isAr ? "العضويات والخطط" : "Membership & Plans",
-    title: isAr ? "اختر الباقة المناسبة لرحلتك" : "Choose the right plan for your trip",
+    eyebrow: isAr ? "باقات الرحلات" : "Trip Plans",
+    title: isAr ? "اختر الباقة المناسبة لمدة رحلتك" : "Choose the right trip plan for your journey",
     subtitle: isAr
-      ? "فعّل اشتراكك للوصول إلى أدوات تخطيط أذكى وتجربة سفر أكثر تخصيصا."
-      : "Activate a plan to unlock smarter trip planning and a more personalized travel experience.",
-    activeNow: isAr ? "الاشتراك الحالي" : "Current Subscription",
-    activeText: isAr ? "لديك اشتراك نشط" : "You currently have an active subscription",
+      ? "اختر باقة محددة بالمدة والرحلة، مع تصميم واضح وتجربة تناسب السفر القصير والطويل."
+      : "Pick a trip-length plan with clear pricing and a polished experience for short or long journeys.",
+    activeNow: isAr ? "الباقة الحالية" : "Current Plan",
+    activeText: isAr ? "لديك باقة رحلات نشطة" : "You currently have an active trip plan",
     expiresOn: isAr ? "ينتهي في" : "Ends on",
     choose: isAr ? "اختيار" : "Choose",
-    current: isAr ? "الباقة الحالية" : "Current Plan",
-    confirmTitle: isAr ? "تأكيد تفعيل الاشتراك" : "Confirm Subscription",
-    confirmText: isAr ? "هل تريد تفعيل هذه الباقة الآن؟" : "Do you want to activate this plan now?",
+    current: isAr ? "الحالية" : "Current",
+    perTrip: isAr ? "لكل رحلة" : "per trip",
+    confirmTitle: isAr ? "تأكيد تفعيل الباقة" : "Confirm Trip Plan",
+    confirmText: isAr ? "هل تريد تفعيل هذه الباقة الآن؟" : "Do you want to activate this trip plan now?",
     cancel: isAr ? "إلغاء" : "Cancel",
     confirm: isAr ? "تأكيد" : "Confirm",
     processing: isAr ? "جار التنفيذ..." : "Processing...",
     needLogin: isAr ? "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى." : "Session expired. Please log in again.",
-    subscribeSuccess: isAr ? "تم تفعيل الاشتراك بنجاح." : "Subscription activated successfully.",
-    subscribeFail: isAr ? "تعذر تفعيل الاشتراك. حاول مرة أخرى." : "Unable to activate subscription. Please try again.",
-    statusFail: isAr ? "تعذر تحميل حالة الاشتراك الحالية." : "Could not load current subscription status.",
-    durationMonths: isAr ? "شهر" : "month",
+    subscribeSuccess: isAr ? "تم تفعيل باقة الرحلة بنجاح." : "Trip plan activated successfully.",
+    subscribeFail: isAr ? "تعذر تفعيل باقة الرحلة. حاول مرة أخرى." : "Unable to activate the trip plan. Please try again.",
+    statusFail: isAr ? "تعذر تحميل حالة الباقة الحالية." : "Could not load current trip plan status.",
+    durationUnit: isAr ? "أيام" : "days",
     popular: isAr ? "⭐ الأكثر اختيارا" : "⭐ Most Popular",
     bestValue: isAr ? "🔥 أفضل قيمة" : "🔥 Best Value",
     saveLabel: isAr ? "وفر 60%" : "Save 60%",
     startNow: isAr ? "ابدأ الآن" : "Start Now",
     getStarted: isAr ? "ابدأ" : "Get Started",
     goPremium: isAr ? "إلى الباقة المميزة" : "Go Premium",
-    currency: "EGP",
+    currency: "$",
   };
 }
 

@@ -11,6 +11,7 @@ import {
   getLocalizedPlanDescription,
   getLocalizedPlanFeatures,
   getLocalizedPlanName,
+  findPlanByRawValue,
   mapActiveSubscription,
   PLANS,
 } from "@/components/subscription/subscriptionData";
@@ -20,12 +21,12 @@ function formatPrice(value: number, isAr: boolean): string {
   return new Intl.NumberFormat(isAr ? "ar-EG" : "en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
-function formatDuration(value: number, isAr: boolean): string {
+function formatDuration(isAr: boolean): string {
   if (isAr) {
-    return value === 1 ? "شهر" : "أشهر";
+    return "أيام";
   }
 
-  return value === 1 ? "Month" : "Months";
+  return "days";
 }
 
 export default function MembershipPage() {
@@ -49,7 +50,7 @@ export default function MembershipPage() {
 
   const copy = useMemo(
     () => ({
-      eyebrow: isAr ? "إتمام العضوية" : "Complete Membership",
+      eyebrow: isAr ? "إتمام الباقة" : "Complete trip plan",
       title: isAr ? "أدخل بيانات الدفع التجريبية" : "Enter the simulated payment details",
       subtitle: isAr
         ? "هذه تجربة دفع شكلية مخصصة للعرض التقديمي. لا يتم تنفيذ أي عملية حقيقية."
@@ -57,15 +58,15 @@ export default function MembershipPage() {
       planLabel: isAr ? "الخطة المحددة" : "Selected plan",
       durationLabel: isAr ? "المدة" : "Duration",
       priceLabel: isAr ? "السعر" : "Price",
-      confirmButton: isAr ? "تأكيد الاشتراك" : "Confirm Subscription",
+      confirmButton: isAr ? "تأكيد الباقة" : "Confirm plan",
       payNow: isAr ? "معالجة الدفع" : "Process Payment",
-      processing: isAr ? "جار معالجة الاشتراك..." : "Processing subscription...",
+      processing: isAr ? "جار معالجة الباقة..." : "Processing trip plan...",
       missingPlan: isAr ? "يرجى اختيار خطة من صفحة الأسعار." : "Please choose a plan from the pricing page.",
       invalidCard: isAr ? "يرجى إدخال بيانات بطاقة تجريبية صحيحة." : "Please enter valid simulated card details.",
       needLogin: isAr ? "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى." : "Session expired. Please log in again.",
-      alreadyActive: isAr ? "لديك اشتراك نشط بالفعل." : "You already have an active subscription.",
-      successTitle: isAr ? "تم تفعيل الاشتراك" : "Subscription activated",
-      successBody: isAr ? "أصبح اشتراكك فعالا الآن." : "Your subscription is now active.",
+      alreadyActive: isAr ? "لديك باقة نشطة بالفعل." : "You already have an active trip plan.",
+      successTitle: isAr ? "تم تفعيل الباقة" : "Trip plan activated",
+      successBody: isAr ? "أصبحت باقتك فعالة الآن." : "Your trip plan is now active.",
       close: isAr ? "إغلاق" : "Close",
       checkoutLabel: isAr ? "الدفع" : "Checkout",
       simulatedPaymentTitle: isAr ? "دفع تجريبي" : "Simulated payment",
@@ -78,17 +79,17 @@ export default function MembershipPage() {
       expiryFieldLabel: isAr ? "تاريخ الانتهاء" : "Expiry",
       confirmationModalLabel: isAr ? "نافذة التأكيد" : "Confirmation modal",
       checkoutSuffix: isAr ? "الدفع" : "checkout",
-      processingHint: isAr ? "يرجى الانتظار ريثما نقوم بتفعيل عضويتك." : "Please wait while we activate your membership.",
+      processingHint: isAr ? "يرجى الانتظار ريثما نقوم بتفعيل باقتك." : "Please wait while we activate your trip plan.",
       shortCardholderLabel: isAr ? "الحامل" : "Cardholder",
       shortCardLabel: isAr ? "البطاقة" : "Card",
       current: isAr ? "الحالي" : "Current",
-      currency: "EGP",
+      currency: "$",
       popular: isAr ? "الأكثر اختيارا" : "Most Popular",
     }),
     [isAr]
   );
 
-  const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId) ?? null;
+  const selectedPlan = findPlanByRawValue(selectedPlanId);
 
   const showToast = useCallback((type: ToastType, message: string) => {
     setToast({ visible: true, type, message });
@@ -261,7 +262,7 @@ export default function MembershipPage() {
 
           {activeSubscription && <ActiveSubscriptionBanner subscription={activeSubscription} copy={getCopy(isAr)} isAr={isAr} />}
 
-          <div className="mt-8 rounded-3xl border border-amber-100/10 bg-slate-950/45 p-5">
+          <div className="mt-7 rounded-4xl border border-white/10 bg-slate-950/40 p-5 shadow-inner shadow-black/20">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-200/80">{copy.planLabel}</p>
@@ -280,12 +281,12 @@ export default function MembershipPage() {
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-amber-100/60">{copy.durationLabel}</p>
                 <p className="mt-1 text-lg font-bold text-amber-50">
-                  {selectedPlan ? `${selectedPlan.duration} ${formatDuration(selectedPlan.duration, isAr)}` : "-"}
+                  {selectedPlan ? `${selectedPlan.duration} ${formatDuration(isAr)}` : "-"}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-amber-100/60">{copy.priceLabel}</p>
-                <p className="mt-1 text-lg font-bold text-amber-50">{formatPrice(selectedPlan?.price ?? 0, isAr)} {copy.currency}</p>
+                <p className="mt-1 text-lg font-bold text-amber-50">{selectedPlan ? `${copy.currency}${formatPrice(selectedPlan.price, isAr)}` : `-${copy.currency}`}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-amber-100/60">{copy.current}</p>
@@ -389,7 +390,7 @@ export default function MembershipPage() {
                 <span className="rounded-full border border-white/10 px-3 py-1">
                   {selectedPlan.duration} {formatDuration(selectedPlan.duration, isAr)}
                 </span>
-                <span className="rounded-full border border-white/10 px-3 py-1">{formatPrice(selectedPlan.price, isAr)} {copy.currency}</span>
+                <span className="rounded-full border border-white/10 px-3 py-1">{copy.currency}{formatPrice(selectedPlan.price, isAr)}</span>
                 <span className="rounded-full border border-white/10 px-3 py-1">{copy.popular}</span>
               </div>
             </div>

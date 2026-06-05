@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { getNationalityFlag, getNationalityLabel, type UserProfile } from "@/lib/userProfile";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
@@ -10,13 +9,12 @@ import { clearSession, USER_STORAGE_KEY } from "@/lib/session";
 
 function BrandPyramidIcon() {
   return (
-    <Image
-      src="/images/pyramids.svg.png"
+    <img
+      src="/images/pyramids_svg.svg"
       alt="Pyramids"
       width={32}
       height={32}
       className="h-8 w-8 object-contain"
-      priority
     />
   );
 }
@@ -32,6 +30,12 @@ export default function Navbar() {
   const userDisplayName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ");
   const userNationalityFlag = getNationalityFlag(user?.nationality);
   const userNationality = getNationalityLabel(user?.nationality, locale);
+
+  function openGlobalSearch() {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("open-global-search"));
+    }
+  }
 
   // Mount-only initialization: restore user session and locale once.
   useEffect(() => {
@@ -89,7 +93,7 @@ export default function Navbar() {
   const visibleLinks = links.filter((link) => !link.requiresAdmin || user?.role === "admin");
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-amber-200/70 bg-[linear-gradient(120deg,rgba(255,250,240,0.95)_0%,rgba(250,242,228,0.92)_55%,rgba(238,249,255,0.9)_100%)] backdrop-blur-md dark:border-slate-700 dark:bg-[linear-gradient(120deg,rgba(25,19,14,0.95)_0%,rgba(24,30,39,0.92)_100%)]">
+    <nav className="sticky top-0 z-50 border-b border-amber-200/70 bg-[linear-gradient(120deg,#f8f1e5_0%,#f0e6d4_55%,#e8f0f6_100%)] shadow-[0_10px_30px_-20px_rgba(0,0,0,0.45)] dark:border-slate-700 dark:bg-[linear-gradient(120deg,#14100b_0%,#181f28_100%)] dark:shadow-[0_10px_30px_-20px_rgba(0,0,0,0.7)]">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-3 md:flex-nowrap md:gap-4">
         <Link href="/" className="group inline-flex items-center gap-2">
           <BrandPyramidIcon />
@@ -98,21 +102,35 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Mobile-first navigation: collapse links into a drawer on small screens to prevent wrapping and overflow. */}
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-full border border-amber-200/80 bg-white/80 p-2 text-amber-950 transition hover:bg-amber-100 md:hidden dark:border-slate-600 dark:bg-slate-900/70 dark:text-amber-100"
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileMenuOpen}
-          onClick={() => setMobileMenuOpen((value) => !value)}
-        >
-          <span className="sr-only">Toggle menu</span>
-          <span className="flex h-4 w-5 flex-col justify-between">
-            <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "translate-y-1.75 rotate-45" : ""}`} />
-            <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "opacity-0" : ""}`} />
-            <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "-translate-y-1.75 -rotate-45" : ""}`} />
-          </span>
-        </button>
+        <div className="ml-auto flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-full border border-amber-200/80 bg-white/80 p-2 text-amber-950 transition hover:bg-amber-100 dark:border-slate-600 dark:bg-slate-900/70 dark:text-amber-100"
+            aria-label="Open global search"
+            onClick={openGlobalSearch}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7.5" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+
+          {/* Mobile-first navigation: collapse links into a drawer on small screens to prevent wrapping and overflow. */}
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-full border border-amber-200/80 bg-white/80 p-2 text-amber-950 transition hover:bg-amber-100 dark:border-slate-600 dark:bg-slate-900/70 dark:text-amber-100"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((value) => !value)}
+          >
+            <span className="sr-only">Toggle menu</span>
+            <span className="flex h-4 w-5 flex-col justify-between">
+              <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "translate-y-1.75 rotate-45" : ""}`} />
+              <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "opacity-0" : ""}`} />
+              <span className={`h-0.5 w-full rounded-full bg-current transition ${mobileMenuOpen ? "-translate-y-1.75 -rotate-45" : ""}`} />
+            </span>
+          </button>
+        </div>
 
         <ul className="hidden flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-slate-700 md:flex md:flex-nowrap md:text-sm dark:text-slate-200">
           {visibleLinks.map((link) => (
@@ -153,6 +171,18 @@ export default function Navbar() {
         </ul>
 
         <div className="ml-auto hidden shrink-0 items-center gap-2 md:ml-0 md:flex lg:gap-2.5">
+          <button
+            type="button"
+            onClick={openGlobalSearch}
+            className="inline-flex items-center justify-center rounded-full border border-amber-300/60 bg-[#14110f] px-3 py-2 text-amber-100 transition hover:border-amber-300 hover:bg-[#1a1511]"
+            aria-label="Open global search"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7.5" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+
           <button
             type="button"
             onClick={handleToggleLanguage}

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { API_ENDPOINTS, apiFetch, type ApiActivity, type ApiDestination } from "@/lib/api";
+import { API_ENDPOINTS, apiFetch, type ApiActivity, type ApiAdminStats, type ApiAdminUser, type ApiDestination } from "@/lib/api";
+import { getAuthToken } from "@/lib/session";
 
-type Section = "activities" | "destinations";
+type Section = "activities" | "destinations" | "users";
 type Mode = "create" | "edit";
 
 type MessageState = {
@@ -38,6 +39,33 @@ const DESTINATION_TYPES = ["Cultural", "Desert", "Sea & Diving", "Eco & Wellness
 
 const ACTIVITY_CATEGORIES = ["Cultural", "Desert", "Sea & Diving", "Eco & Wellness", "Adventure", "Leisure"];
 
+const DEFAULT_DESTINATION_STATS = [
+	{ label: "Cairo", val: 3 },
+	{ label: "Giza", val: 2 },
+	{ label: "Luxor", val: 3 },
+	{ label: "Aswan", val: 2 },
+	{ label: "Hurghada", val: 1 },
+	{ label: "Sharm", val: 1 },
+];
+
+const DEFAULT_CATEGORY_STATS = [
+	{ name: "Heritage", pct: 50, color: "#c9a84c" },
+	{ name: "Cultural", pct: 25, color: "#555" },
+	{ name: "Adventure", pct: 17, color: "#444" },
+	{ name: "Shopping", pct: 8, color: "#2e2e2e" },
+];
+
+const CATEGORY_COLORS: Record<string, string> = {
+	Heritage: "#c9a84c",
+	Cultural: "#555",
+	Adventure: "#444",
+	Shopping: "#2e2e2e",
+	Leisure: "#6d5730",
+	Desert: "#7a5d1b",
+	"Sea & Diving": "#0f766e",
+	"Eco & Wellness": "#3f5f3f",
+};
+
 function toNumberString(value: number | string | null | undefined): string {
 	if (value === null || value === undefined) {
 		return "";
@@ -48,6 +76,23 @@ function toNumberString(value: number | string | null | undefined): string {
 
 function isHiddenValue(value: ApiActivity["is_hidden"]): boolean {
 	return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function ActionButtons({ onEdit, onDelete, editLabel = "Edit" }: { onEdit: () => void; onDelete: () => void; editLabel?: string; }) {
+	return (
+		<>
+			<button onClick={onEdit} style={{
+				fontSize: 11, padding: "3px 10px", marginRight: 3,
+				border: "0.5px solid #2a2210", borderRadius: 6,
+				background: "#13110a", color: "#c9a84c", cursor: "pointer",
+			}}>{editLabel}</button>
+			<button onClick={onDelete} style={{
+				fontSize: 11, padding: "3px 10px",
+				border: "0.5px solid #2a1010", borderRadius: 6,
+				background: "#110a0a", color: "#8a3030", cursor: "pointer",
+			}}>Delete</button>
+		</>
+	);
 }
 
 function toActivityFormState(activity: ApiActivity | null = null): ActivityFormState {
@@ -83,6 +128,65 @@ function formatCoordinates(latitude?: number | string | null, longitude?: number
 	}
 
 	return `${latitude}, ${longitude}`;
+}
+
+function KpiCard({ label, value, sub }: { label: string; value: number | string; sub: string; }) {
+	return (
+		<div className="rounded-[24px] border border-white/15 bg-[#120f0a] p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
+			<p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">{label}</p>
+			<p className="mt-2 text-3xl font-black">{value}</p>
+			<p className="mt-2 text-sm text-white/65">{sub}</p>
+		</div>
+	);
+}
+
+function RoleBadge({ role }: { role: string; }) {
+	const isAdmin = role === "admin";
+
+	return (
+		<span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${isAdmin ? "border-sky-200 bg-sky-50 text-sky-800" : "border-stone-200 bg-stone-100 text-stone-700"}`}>
+			{role}
+		</span>
+	);
+}
+
+function buildDestinationStats(activities: ApiActivity[]) {
+	const counts = new Map<string, number>();
+
+	for (const activity of activities) {
+		const destination = activity.destination_name ?? "Unknown";
+		counts.set(destination, (counts.get(destination) ?? 0) + 1);
+	}
+
+	const entries = Array.from(counts.entries())
+		.sort((left, right) => right[1] - left[1])
+		.slice(0, 6)
+		.map(([label, val]) => ({ label, val }));
+
+	return entries.length > 0 ? entries : DEFAULT_DESTINATION_STATS;
+}
+
+function buildCategoryStats(activities: ApiActivity[]) {
+	if (activities.length === 0) {
+		return DEFAULT_CATEGORY_STATS;
+	}
+
+	const counts = new Map<string, number>();
+
+	for (const activity of activities) {
+		const category = activity.category ?? "Uncategorized";
+		counts.set(category, (counts.get(category) ?? 0) + 1);
+	}
+
+	const total = activities.length;
+
+	return Array.from(counts.entries())
+		.sort((left, right) => right[1] - left[1])
+		.map(([name, count]) => ({
+			name,
+			pct: Math.max(1, Math.round((count / total) * 100)),
+			color: CATEGORY_COLORS[name] ?? "#666",
+		}));
 }
 
 function ActivityModal({
@@ -269,9 +373,12 @@ export default function AdminEntityManager() {
 	const [section, setSection] = useState<Section>("activities");
 	const [activities, setActivities] = useState<ApiActivity[]>([]);
 	const [destinations, setDestinations] = useState<ApiDestination[]>([]);
+	const [users, setUsers] = useState<ApiAdminUser[]>([]);
+	const [stats, setStats] = useState<ApiAdminStats | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [busyDeleteId, setBusyDeleteId] = useState<number | null>(null);
+	const [busyRoleId, setBusyRoleId] = useState<number | null>(null);
 	const [search, setSearch] = useState("");
 	const [message, setMessage] = useState<MessageState | null>(null);
 	const [modalOpen, setModalOpen] = useState(false);
@@ -280,15 +387,29 @@ export default function AdminEntityManager() {
 	const [destinationForm, setDestinationForm] = useState<DestinationFormState>(toDestinationFormState());
 
 	const loadData = async () => {
+		const token = getAuthToken();
+
+		if (!token) {
+			setMessage({ type: "error", text: "Please sign in again to load admin data." });
+			setLoading(false);
+			return;
+		}
+
+		const authHeaders = { Authorization: `Bearer ${token}` };
 		setLoading(true);
+		setMessage(null);
 		try {
-			const [activityData, destinationData] = await Promise.all([
-				apiFetch<ApiActivity[]>(API_ENDPOINTS.activities),
+			const [activityData, destinationData, statsData, userData] = await Promise.all([
+				apiFetch<ApiActivity[]>(API_ENDPOINTS.adminActivities, { headers: authHeaders }),
 				apiFetch<ApiDestination[]>(API_ENDPOINTS.destinations),
+				apiFetch<ApiAdminStats>(API_ENDPOINTS.adminStats, { headers: authHeaders }),
+				apiFetch<ApiAdminUser[]>(API_ENDPOINTS.adminUsers, { headers: authHeaders }),
 			]);
 
 			setActivities(activityData ?? []);
 			setDestinations(destinationData ?? []);
+			setStats(statsData ?? null);
+			setUsers(userData ?? []);
 		} catch (error) {
 			setMessage({ type: "error", text: error instanceof Error ? error.message : "Failed to load admin data." });
 		} finally {
@@ -304,7 +425,7 @@ export default function AdminEntityManager() {
 		const query = search.trim().toLowerCase();
 		return activities.filter((activity) => {
 			if (!query) return true;
-			return [activity.name, activity.type, activity.category ?? "", activity.destination_name].join(" ").toLowerCase().includes(query);
+			return [activity.name, activity.type, activity.category ?? "", activity.destination_name ?? ""].join(" ").toLowerCase().includes(query);
 		});
 	}, [activities, search]);
 
@@ -316,9 +437,29 @@ export default function AdminEntityManager() {
 		});
 	}, [destinations, search]);
 
-	const activeCount = section === "activities" ? visibleActivities.length : visibleDestinations.length;
+	const visibleUsers = useMemo(() => {
+		const query = search.trim().toLowerCase();
+		return users.filter((user) => {
+			if (!query) return true;
+			return [user.name, user.email, user.country ?? "", user.role, user.joined ?? ""].join(" ").toLowerCase().includes(query);
+		});
+	}, [search, users]);
+
+	const destinationStats = useMemo(() => buildDestinationStats(activities), [activities]);
+	const categoryStats = useMemo(() => buildCategoryStats(activities), [activities]);
+
+	const totalActivities = stats?.activityCount ?? activities.length;
+	const totalUsers = stats?.userCount ?? users.filter((user) => user.role !== "admin").length;
+	const totalDestinations = stats?.destCount ?? destinations.length;
+	const totalCompanies = stats?.companyCount ?? 0;
+	const activeCount = section === "activities" ? visibleActivities.length : section === "destinations" ? visibleDestinations.length : visibleUsers.length;
 
 	const openCreateModal = () => {
+		if (section === "users") {
+			setMessage({ type: "error", text: "Use the table actions to manage users." });
+			return;
+		}
+
 		setMode("create");
 		setModalOpen(true);
 		setMessage(null);
@@ -331,6 +472,10 @@ export default function AdminEntityManager() {
 	};
 
 	const openEditModal = (item: ApiActivity | ApiDestination) => {
+		if (section === "users") {
+			return;
+		}
+
 		setMode("edit");
 		setModalOpen(true);
 		setMessage(null);
@@ -361,6 +506,12 @@ export default function AdminEntityManager() {
 					throw new Error("All activity fields are required.");
 				}
 
+				const token = getAuthToken();
+				if (!token) {
+					throw new Error("Missing admin session token.");
+				}
+
+				const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 				const payload = {
 					...activityForm,
 					destination_id: Number(activityForm.destination_id),
@@ -370,15 +521,15 @@ export default function AdminEntityManager() {
 				};
 
 				if (mode === "create") {
-					await apiFetch(API_ENDPOINTS.activityCreate, {
+					await apiFetch(API_ENDPOINTS.adminActivities, {
 						method: "POST",
-						headers: { "Content-Type": "application/json" },
+						headers: authHeaders,
 						body: JSON.stringify(payload),
 					});
 				} else {
-					await apiFetch(API_ENDPOINTS.activityUpdate, {
-						method: "POST",
-						headers: { "Content-Type": "application/json" },
+					await apiFetch(`${API_ENDPOINTS.adminActivities}/${activityForm.id}`, {
+						method: "PUT",
+						headers: authHeaders,
 						body: JSON.stringify({ ...payload, id: activityForm.id }),
 					});
 				}
@@ -421,8 +572,8 @@ export default function AdminEntityManager() {
 		}
 	};
 
-	const deleteItem = async (item: ApiActivity | ApiDestination) => {
-		const singularLabel = section === "activities" ? "activity" : "destination";
+	const deleteItem = async (item: ApiActivity | ApiDestination | ApiAdminUser) => {
+		const singularLabel = section === "activities" ? "activity" : section === "users" ? "user" : "destination";
 
 		if (!window.confirm(`Delete this ${singularLabel}? This cannot be undone.`)) {
 			return;
@@ -433,11 +584,26 @@ export default function AdminEntityManager() {
 		setMessage(null);
 
 		try {
+			const token = getAuthToken();
+			const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+
 			if (section === "activities") {
-				await apiFetch(API_ENDPOINTS.activityDelete, {
+				if (!authHeaders) {
+					throw new Error("Missing admin session token.");
+				}
+
+				await apiFetch(`${API_ENDPOINTS.adminActivities}/${id}`, {
 					method: "DELETE",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ id }),
+					headers: authHeaders,
+				});
+			} else if (section === "users") {
+				if (!authHeaders) {
+					throw new Error("Missing admin session token.");
+				}
+
+				await apiFetch(`${API_ENDPOINTS.adminUsers}/${id}`, {
+					method: "DELETE",
+					headers: authHeaders,
 				});
 			} else {
 				await apiFetch(API_ENDPOINTS.destinationDelete, {
@@ -456,23 +622,66 @@ export default function AdminEntityManager() {
 		}
 	};
 
+	const updateUserRole = async (user: ApiAdminUser) => {
+		const currentRole = user.role === "admin" ? "admin" : "user";
+		const nextRole = currentRole === "admin" ? "user" : "admin";
+
+		if (!window.confirm(`Change ${user.name} to ${nextRole}?`)) {
+			return;
+		}
+
+		const id = Number(user.id);
+		setBusyRoleId(id);
+		setMessage(null);
+
+		try {
+			const token = getAuthToken();
+			if (!token) {
+				throw new Error("Missing admin session token.");
+			}
+
+			await apiFetch(`${API_ENDPOINTS.adminUsers}/${id}`, {
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ role: nextRole }),
+			});
+
+			await loadData();
+			setMessage({ type: "success", text: `Updated ${user.name} to ${nextRole}.` });
+		} catch (error) {
+			setMessage({ type: "error", text: error instanceof Error ? error.message : "Role update failed." });
+		} finally {
+			setBusyRoleId(null);
+		}
+	};
+
 	return (
 		<section className="space-y-6">
 			<div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
 				<div className="rounded-[28px] border border-white/15 bg-white/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur">
 					<div className="flex flex-wrap items-start justify-between gap-4">
 						<div className="space-y-2">
-							<p className="text-xs font-black uppercase tracking-[0.24em] text-(--admin-primary)">Content Control</p>
-							<h2 className="text-2xl font-black text-stone-950 md:text-3xl">Activities and Destinations</h2>
-							<p className="max-w-2xl text-sm leading-6 text-stone-600">Manage the shared content source used across the map, destination pages, and activity listings. Changes are written directly to MySQL.</p>
+							<p className="text-xs font-black uppercase tracking-[0.24em] text-(--admin-primary)">Operations Center</p>
+							<h2 className="text-2xl font-black text-stone-950 md:text-3xl">Egypt Panorama Admin Management</h2>
+							<p className="max-w-2xl text-sm leading-6 text-stone-600">Manage activities, destinations, and users from a single control surface. The dashboard writes directly to the MySQL backend used by the public app.</p>
 						</div>
-						<button type="button" onClick={openCreateModal} className="rounded-full bg-stone-950 px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-stone-800">
-							Add {section === "activities" ? "Activity" : "Destination"}
-						</button>
+						<div className="flex flex-wrap justify-end gap-3">
+							{section !== "users" ? (
+								<button type="button" onClick={openCreateModal} className="rounded-full bg-stone-950 px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-stone-800">
+									Add {section === "activities" ? "Activity" : "Destination"}
+								</button>
+							) : null}
+							<button type="button" onClick={() => void loadData()} className="rounded-full border border-stone-300 bg-white px-5 py-2.5 text-sm font-black text-stone-700 transition hover:bg-stone-50">
+								Refresh
+							</button>
+						</div>
 					</div>
 
 					<div className="mt-5 flex flex-wrap gap-2">
-						{(["activities", "destinations"] as Section[]).map((nextSection) => (
+						{(["activities", "destinations", "users"] as Section[]).map((nextSection) => (
 							<button
 								key={nextSection}
 								type="button"
@@ -483,7 +692,7 @@ export default function AdminEntityManager() {
 										: "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
 								}`}
 							>
-								{nextSection === "activities" ? "Activities" : "Destinations"}
+								{nextSection === "activities" ? "Activities" : nextSection === "destinations" ? "Destinations" : "Users"}
 							</button>
 						))}
 					</div>
@@ -493,7 +702,7 @@ export default function AdminEntityManager() {
 					<div className="rounded-3xl border border-white/15 bg-[#12100c] p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
 						<p className="text-xs font-black uppercase tracking-[0.22em] text-amber-300">Loaded</p>
 						<p className="mt-2 text-3xl font-black">{loading ? "..." : activeCount}</p>
-						<p className="mt-2 text-sm text-white/65">{section === "activities" ? "Visible activities matching your search." : "Visible destinations matching your search."}</p>
+						<p className="mt-2 text-sm text-white/65">{section === "activities" ? "Visible activities matching your search." : section === "destinations" ? "Visible destinations matching your search." : "Users matching your search."}</p>
 					</div>
 					<div className="rounded-3xl border border-white/15 bg-[#1c140d] p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.18)]">
 						<p className="text-xs font-black uppercase tracking-[0.22em] text-orange-200">Sync</p>
@@ -503,17 +712,24 @@ export default function AdminEntityManager() {
 				</div>
 			</div>
 
+			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+				<KpiCard label="Activities" value={totalActivities} sub="All destinations" />
+				<KpiCard label="Registered users" value={totalUsers} sub="Excluding admins" />
+				<KpiCard label="Destinations" value={totalDestinations} sub="Active locations" />
+				<KpiCard label="Companies" value={totalCompanies} sub="Tourism operators" />
+			</div>
+
 			<div className="rounded-[28px] border border-white/15 bg-white/85 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur">
 				<div className="flex flex-col gap-4 border-b border-stone-200 pb-4 md:flex-row md:items-center md:justify-between">
 					<div>
-						<p className="text-xs font-black uppercase tracking-[0.22em] text-stone-500">{section === "activities" ? "Activity Library" : "Destination Library"}</p>
-						<h3 className="mt-1 text-xl font-black text-stone-950">{section === "activities" ? "Manage activities" : "Manage destinations"}</h3>
+						<p className="text-xs font-black uppercase tracking-[0.22em] text-stone-500">{section === "activities" ? "Activity Library" : section === "destinations" ? "Destination Library" : "User Management"}</p>
+						<h3 className="mt-1 text-xl font-black text-stone-950">{section === "activities" ? "Manage activities" : section === "destinations" ? "Manage destinations" : "Manage users"}</h3>
 					</div>
 					<div className="flex flex-1 flex-wrap items-center gap-3 md:max-w-xl md:justify-end">
 						<input
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder={section === "activities" ? "Search activity, type, category, destination" : "Search destination or city"}
+							placeholder={section === "activities" ? "Search activity, type, category, destination" : section === "destinations" ? "Search destination or city" : "Search user, email, country, role"}
 							className="min-w-0 flex-1 rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-amber-400"
 						/>
 						<button type="button" onClick={() => void loadData()} className="rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 transition hover:bg-stone-50">
@@ -581,7 +797,7 @@ export default function AdminEntityManager() {
 							</tbody>
 						</table>
 					</div>
-				) : (
+				) : section === "destinations" ? (
 					<div className="overflow-x-auto">
 						<table className="min-w-full text-left text-sm">
 							<thead className="bg-stone-100 text-xs uppercase tracking-[0.11em] text-stone-500">
@@ -610,6 +826,50 @@ export default function AdminEntityManager() {
 													<button type="button" onClick={() => openEditModal(destination)} className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 transition hover:bg-stone-50">Edit</button>
 													<button type="button" onClick={() => void deleteItem(destination)} disabled={busyDeleteId === Number(destination.id)} className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60">
 														{busyDeleteId === Number(destination.id) ? "Deleting..." : "Delete"}
+													</button>
+												</div>
+											</td>
+										</tr>
+									))
+								)}
+							</tbody>
+						</table>
+					</div>
+				) : (
+					<div className="overflow-x-auto">
+						<table className="min-w-full text-left text-sm">
+							<thead className="bg-stone-100 text-xs uppercase tracking-[0.11em] text-stone-500">
+								<tr>
+									<th className="px-4 py-3">User</th>
+									<th className="px-4 py-3">Email</th>
+									<th className="px-4 py-3">Country</th>
+									<th className="px-4 py-3">Role</th>
+									<th className="px-4 py-3">Joined</th>
+									<th className="px-4 py-3 text-right">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								{visibleUsers.length === 0 ? (
+									<tr>
+										<td className="px-4 py-8 text-stone-500" colSpan={6}>No users match your search.</td>
+									</tr>
+								) : (
+									visibleUsers.map((user) => (
+										<tr key={user.id} className="border-t border-stone-200/80 bg-white">
+											<td className="px-4 py-4 align-top font-bold text-stone-950">{user.name}</td>
+											<td className="px-4 py-4 align-top text-stone-700">{user.email}</td>
+											<td className="px-4 py-4 align-top text-stone-700">{user.country ?? "-"}</td>
+											<td className="px-4 py-4 align-top">
+												<RoleBadge role={user.role} />
+											</td>
+											<td className="px-4 py-4 align-top text-stone-700">{user.joined ?? "-"}</td>
+											<td className="px-4 py-4 align-top text-right">
+												<div className="inline-flex gap-2">
+													<button type="button" onClick={() => void updateUserRole(user)} disabled={busyRoleId === Number(user.id)} className="rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 transition hover:bg-stone-50 disabled:opacity-60">
+														{busyRoleId === Number(user.id) ? "Updating..." : user.role === "admin" ? "Demote" : "Make admin"}
+													</button>
+													<button type="button" onClick={() => void deleteItem(user)} disabled={busyDeleteId === Number(user.id) || user.role === "admin"} className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-60">
+														{busyDeleteId === Number(user.id) ? "Deleting..." : user.role === "admin" ? "Protected" : "Delete"}
 													</button>
 												</div>
 											</td>

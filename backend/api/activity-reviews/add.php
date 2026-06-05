@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../../middleware/auth.php';
 
 requireMethod('POST');
+$user = requireAuth();
 
 $input = getJsonInput();
-requireFields($input, ['activity_id', 'rating', 'comment']);
+requireFields($input, ['activity_id', 'rating']);
 
 $activityId = (int)$input['activity_id'];
 $rating = (float)$input['rating'];
 $comment = isset($input['comment']) ? cleanString($input['comment']) : '';
-$userId = isset($input['user_id']) ? (int)$input['user_id'] : null;
 
 if ($activityId <= 0) {
     errorResponse('Invalid activity_id', 422);
@@ -19,10 +19,6 @@ if ($activityId <= 0) {
 
 if ($rating < 1 || $rating > 5) {
     errorResponse('Rating must be between 1 and 5', 422);
-}
-
-if ($comment === '' && !isset($input['comment'])) {
-    errorResponse('Comment is required', 422);
 }
 
 try {
@@ -50,7 +46,7 @@ try {
     $insertStmt = $pdo->prepare($insertSql);
     $insertStmt->execute([
         ':activity_id' => $activityId,
-        ':user_id' => $userId,
+        ':user_id' => $user['id'],
         ':rating' => $rating,
         ':comment' => $comment
     ]);
@@ -60,7 +56,7 @@ try {
     successResponse([
         'id' => $reviewId,
         'activity_id' => $activityId,
-        'user_id' => $userId,
+        'user_id' => $user['id'],
         'rating' => $rating,
         'comment' => $comment,
         'created_at' => date('Y-m-d H:i:s')

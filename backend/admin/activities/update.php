@@ -28,6 +28,7 @@ try {
     $activityRatingColumn = quoteIdentifier($activitiesSchema['rating']);
     $activityPriceColumn = quoteIdentifier($activitiesSchema['price']);
     $activityImageUrlColumn = quoteIdentifier($activitiesSchema['image_url']);
+    $activityHiddenColumn = quoteIdentifier($activitiesSchema['is_hidden']);
 
     $destinationsTable = quoteIdentifier($destinationsSchema['table']);
     $destinationIdColumn = quoteIdentifier($destinationsSchema['id']);
@@ -95,6 +96,12 @@ try {
         $params[':image_url'] = $imageUrl === '' ? null : $imageUrl;
     }
 
+    if (array_key_exists('is_hidden', $input)) {
+        $isHidden = filter_var($input['is_hidden'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $fields[] = "{$activityHiddenColumn} = :is_hidden";
+        $params[':is_hidden'] = $isHidden ? 1 : 0;
+    }
+
     if ($fields === []) {
         errorResponse('No fields provided for update', 422);
     }
@@ -111,7 +118,10 @@ try {
     $updateStmt = $pdo->prepare($sql);
     $updateStmt->execute($params);
 
-    successResponse(null, 'Activity updated successfully', 200);
+    successResponse([
+        'id' => $id,
+        'is_hidden' => array_key_exists(':is_hidden', $params) ? $params[':is_hidden'] : null,
+    ], 'Activity updated successfully', 200);
 } catch (PDOException $e) {
     error_log('Database error while updating activity: ' . $e->getMessage());
     dbErrorResponse($e, 500);

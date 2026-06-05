@@ -1,4 +1,3 @@
-import Image from "next/image"
 import Link from "next/link"
 import { getLocale } from "next-intl/server"
 
@@ -19,15 +18,11 @@ export default async function HeroSection() {
   }
 
   return (
-    <section className="relative isolate flex min-h-[72vh] items-center justify-center overflow-hidden text-white sm:min-h-[78vh] lg:min-h-[88vh]">
-
-      <Image
-        src="/images/hero/pyramids.jpg"
-        alt="Pyramids in Egypt"
-        fill
-        priority
-        sizes="100vw"
-        className="absolute z-0 object-cover object-center"
+    <section className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden text-white">
+      <div
+        className="absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/images/hero/pyramids.jpg')" }}
+        aria-hidden="true"
       />
 
       <div className="absolute inset-0 z-10 bg-[linear-gradient(120deg,rgba(25,14,8,0.75)_0%,rgba(31,23,16,0.58)_46%,rgba(14,47,63,0.45)_100%)]"></div>

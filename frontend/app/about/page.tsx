@@ -27,7 +27,7 @@ type TeamMember = {
 };
 
 const stats: Stat[] = [
-  { value: "6", label: "Tourism Categories" },
+  { value: "5", label: "Tourism Categories" },
   { value: "30+", label: "Destinations Curated" },
   { value: "7000", label: "Years of Heritage" },
   { value: "24/7", label: "Planning Access" },

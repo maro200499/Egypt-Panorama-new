@@ -15,6 +15,9 @@ $destinationId = (int)$input['destination_id'];
 $rating = isset($input['rating']) && $input['rating'] !== '' ? (float)$input['rating'] : 4.0;
 $price = array_key_exists('price', $input) ? trim((string)$input['price']) : 'N/A';
 $imageUrl = array_key_exists('image_url', $input) ? trim((string)$input['image_url']) : null;
+$isHidden = array_key_exists('is_hidden', $input)
+    ? filter_var($input['is_hidden'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+    : false;
 
 if ($name === '' || $type === '' || $destinationId <= 0) {
     errorResponse('Invalid input data', 422);
@@ -41,6 +44,7 @@ try {
     $activityRating = quoteIdentifier($activitiesSchema['rating']);
     $activityPrice = quoteIdentifier($activitiesSchema['price']);
     $activityImageUrl = quoteIdentifier($activitiesSchema['image_url']);
+    $activityHidden = quoteIdentifier($activitiesSchema['is_hidden']);
 
     $destinationsTable = quoteIdentifier($destinationsSchema['table']);
     $destinationIdColumn = quoteIdentifier($destinationsSchema['id']);
@@ -53,8 +57,8 @@ try {
         errorResponse('Destination not found', 404);
     }
 
-    $insertSql = "INSERT INTO {$activitiesTable} ({$activityName}, {$activityType}, {$activityDestinationId}, {$activityRating}, {$activityPrice}, {$activityImageUrl})
-                  VALUES (:name, :type, :destination_id, :rating, :price, :image_url)";
+    $insertSql = "INSERT INTO {$activitiesTable} ({$activityName}, {$activityType}, {$activityDestinationId}, {$activityRating}, {$activityPrice}, {$activityImageUrl}, {$activityHidden})
+                  VALUES (:name, :type, :destination_id, :rating, :price, :image_url, :is_hidden)";
 
     $insertStmt = $pdo->prepare($insertSql);
 
@@ -65,6 +69,7 @@ try {
         ':rating' => $rating,
         ':price' => $price,
         ':image_url' => $imageUrl === '' ? null : $imageUrl,
+        ':is_hidden' => $isHidden ? 1 : 0,
     ]);
 
     successResponse([
@@ -75,6 +80,8 @@ try {
         'rating' => $rating,
         'price' => $price,
         'image_url' => $imageUrl === '' ? null : $imageUrl,
+        'is_hidden' => $isHidden ? 1 : 0,
+        'status' => $isHidden ? 'Hidden' : 'Visible',
     ], 'Activity created successfully', 201);
 } catch (PDOException $e) {
     error_log('Database error while adding activity: ' . $e->getMessage());

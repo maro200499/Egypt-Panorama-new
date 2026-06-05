@@ -51,8 +51,6 @@ type OptionItem = {
   label: string;
 };
 
-type CurrencyCode = "USD" | "EGP";
-
 // ── Itinerary Database ────────────────────────────────────────────────────────
 const ITINERARIES: Record<string, Record<number, DayPlan[]>> = {
   Cairo: {
@@ -351,19 +349,20 @@ const EN_COPY = {
   readyToBook: "Ready to Book?",
   browseCompanies: "Browse All Companies ◈",
   partialPreview: "Partial Itinerary Preview",
-  partialMessage: "You are seeing a preview of your itinerary. Subscribe to unlock the complete day-by-day plan.",
+  partialMessage: "You are seeing a preview of your itinerary. Pick a trip plan to unlock the complete day-by-day plan.",
   unlockTitle: "Unlock Full Trip Plan",
-  unlockMessage: "Full access to the complete itinerary, all activities, and insider tips requires a subscription.",
-  oneMonth: "1 Month",
-  threeMonths: "3 Months",
-  twelveMonths: "12 Months",
-  subscribe: "Subscribe",
-  subscribeNow: "Subscribe Now",
+  unlockMessage: "Full access to the complete itinerary, all activities, and insider tips requires a trip plan.",
+  weekendPlan: "Weekend",
+  shortTripPlan: "Short Trip",
+  classicPlan: "Classic",
+  fullJourneyPlan: "Full Journey",
+  subscribe: "Choose",
+  subscribeNow: "Choose Plan",
   premiumContent: "Premium Content",
-  lockedPlanMessage: "Subscribe to unlock full travel plan",
+  lockedPlanMessage: "Choose a trip plan to unlock the full travel plan",
   unlocked: "Full plan unlocked",
-  loginRequiredForSubscription: "Please log in to subscribe and unlock the full itinerary.",
-  subscriptionFailed: "Could not update subscription right now. Please try again.",
+  loginRequiredForSubscription: "Please log in to choose a trip plan and unlock the full itinerary.",
+  subscriptionFailed: "Could not update the trip plan right now. Please try again.",
   adjustedMatchNotice: "No exact style/budget match found. Showing the best available activities for your destination.",
   exactMatchNotice: "Activities match your selected style and budget.",
   noActivitiesFound: "No activities were found for this destination yet.",
@@ -409,19 +408,20 @@ const AR_COPY = {
   readyToBook: "جاهز للحجز؟",
   browseCompanies: "تصفح كل الشركات ◈",
   partialPreview: "معاينة جزئية لخطة الرحلة",
-  partialMessage: "تشاهد الآن معاينة فقط. اشترك لفتح الخطة الكاملة يوما بيوم.",
+  partialMessage: "تشاهد الآن معاينة فقط. اختر باقة رحلة لفتح الخطة الكاملة يوما بيوم.",
   unlockTitle: "فتح الخطة الكاملة للرحلة",
-  unlockMessage: "الوصول الكامل الى البرنامج وجميع الانشطة ونصائح السفر يتطلب اشتراكا.",
-  oneMonth: "شهر واحد",
-  threeMonths: "3 اشهر",
-  twelveMonths: "12 شهرا",
-  subscribe: "اشترك",
-  subscribeNow: "اشترك الآن",
+  unlockMessage: "الوصول الكامل الى البرنامج وجميع الانشطة ونصائح السفر يتطلب باقة رحلة.",
+  weekendPlan: "عطلة نهاية الأسبوع",
+  shortTripPlan: "رحلة قصيرة",
+  classicPlan: "كلاسيك",
+  fullJourneyPlan: "الرحلة الكاملة",
+  subscribe: "اختيار",
+  subscribeNow: "اختر الباقة",
   premiumContent: "محتوى حصري",
-  lockedPlanMessage: "اشترك لفتح خطة السفر الكاملة",
+  lockedPlanMessage: "اختر باقة رحلة لفتح خطة السفر الكاملة",
   unlocked: "تم فتح الخطة الكاملة",
-  loginRequiredForSubscription: "يرجى تسجيل الدخول للاشتراك وفتح خطة الرحلة الكاملة.",
-  subscriptionFailed: "تعذر تحديث الاشتراك حاليا. حاول مرة أخرى.",
+  loginRequiredForSubscription: "يرجى تسجيل الدخول لاختيار باقة الرحلة وفتح الخطة الكاملة.",
+  subscriptionFailed: "تعذر تحديث باقة الرحلة حاليا. حاول مرة أخرى.",
   adjustedMatchNotice: "لا يوجد تطابق دقيق مع النمط والميزانية. نعرض افضل الانشطة المتاحة لهذه الوجهة.",
   exactMatchNotice: "الانشطة مطابقة للنمط والميزانية المحددين.",
   noActivitiesFound: "لا توجد انشطة متاحة لهذه الوجهة حاليا.",
@@ -456,7 +456,7 @@ function formatApiActivity(activity: ApiActivity | null, slot: "Morning" | "Afte
     return null;
   }
 
-  const priceLabel = activity.price > 0 ? ` · ${activity.price} EGP` : "";
+  const priceLabel = activity.price > 0 ? ` · $${activity.price}` : "";
 
   return {
     time: slot,
@@ -674,8 +674,7 @@ function PlanSuggestionContent() {
   const [plan,    setPlan]    = useState<GeneratedPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [recommendedCompanies, setRecommendedCompanies] = useState<string[]>(presetCompany ? [presetCompany] : []);
-  const [currency, setCurrency] = useState<CurrencyCode>("USD");
-  const [selectedSubscription, setSelectedSubscription] = useState<"1" | "3" | "12">("3");
+  const [selectedSubscription, setSelectedSubscription] = useState<"weekend" | "short-trip" | "classic" | "full-journey">("classic");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [planSource, setPlanSource] = useState<PlanSource>("api");
   const resultRef = useRef<HTMLDivElement>(null);
@@ -759,12 +758,11 @@ function PlanSuggestionContent() {
   const showAdjustedMatchNotice = planSource === "api" && Boolean(plan?.apiMeta?.usedLocationFallback);
   const showExactMatchNotice = planSource === "api" && !plan?.apiMeta?.usedLocationFallback;
   const hasNoActivities = plan ? plan.days.every((day) => day.activities.length === 0) : false;
-  const convertFromUsd = (usdValue: number) => (currency === "USD" ? usdValue : usdValue * USD_TO_EGP_RATE);
   const formatCurrency = (usdValue: number) => {
-    const converted = convertFromUsd(usdValue);
+    const converted = planSource === "fallback" ? usdValue / USD_TO_EGP_RATE : usdValue;
     return new Intl.NumberFormat(isArabic ? "ar-EG" : "en-US", {
       style: "currency",
-      currency,
+      currency: "USD",
       maximumFractionDigits: 0,
     }).format(converted);
   };
@@ -776,13 +774,14 @@ function PlanSuggestionContent() {
   }));
   const budgetOptions: OptionItem[] = BUDGETS.map((value) => ({ value, label: toLocalizedBudget(value) }));
   const styleOptions: OptionItem[] = STYLES.map((value) => ({ value, label: toLocalizedStyle(value) }));
-  const subscriptionOptions: Array<{ value: "1" | "3" | "12"; label: string }> = [
-    { value: "1", label: copy.oneMonth },
-    { value: "3", label: copy.threeMonths },
-    { value: "12", label: copy.twelveMonths },
+  const subscriptionOptions: Array<{ value: "weekend" | "short-trip" | "classic" | "full-journey"; label: string; duration: number; price: number }> = [
+    { value: "weekend", label: isArabic ? copy.weekendPlan : copy.weekendPlan, duration: 2, price: 5 },
+    { value: "short-trip", label: isArabic ? copy.shortTripPlan : copy.shortTripPlan, duration: 3, price: 8 },
+    { value: "classic", label: isArabic ? copy.classicPlan : copy.classicPlan, duration: 5, price: 13 },
+    { value: "full-journey", label: isArabic ? copy.fullJourneyPlan : copy.fullJourneyPlan, duration: 7, price: 20 },
   ];
   const visibleDays = visiblePlan ? visiblePlan.days : [];
-  const selectedPlan = selectedSubscription === "1" ? "basic" : selectedSubscription === "3" ? "standard" : "premium";
+  const selectedPlan = selectedSubscription;
   const getDayAccess = (index: number): DayAccessLevel => {
     if (isSubscribed) {
       return "full";
@@ -796,7 +795,7 @@ function PlanSuggestionContent() {
   };
   const hasLockedDays = !isSubscribed && visibleDays.length > 1;
   const onLockedSubscribe = () => {
-    router.push(`/membership?plan=${selectedPlan}`);
+    router.push(`/membership?plan=${selectedSubscription}`);
   };
   const localizedRecommendedCompanies = recommendedCompanies.map((company) => toLocalizedCompany(company));
   const companiesSummary = localizedRecommendedCompanies.length > 0
@@ -1002,7 +1001,7 @@ function PlanSuggestionContent() {
                     {copy.unlockMessage}
                   </p>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.65rem", marginBottom: "0.95rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.65rem", marginBottom: "0.95rem" }}>
                     {subscriptionOptions.map((option) => {
                       const selected = selectedSubscription === option.value;
                       return (
@@ -1023,7 +1022,10 @@ function PlanSuggestionContent() {
                             transition: "all 0.25s",
                           }}
                         >
-                          {option.label}
+                          <span style={{ display: "block", fontSize: "0.82rem", marginBottom: "0.18rem" }}>{option.label}</span>
+                          <span style={{ display: "block", fontSize: "0.62rem", opacity: 0.75, letterSpacing: "0.08em" }}>
+                            {option.duration} {isArabic ? "أيام" : "days"} · ${option.price}
+                          </span>
                         </button>
                       );
                     })}
@@ -1086,27 +1088,8 @@ function PlanSuggestionContent() {
 
                   <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", marginBottom: "0.7rem", position: "relative", zIndex: 1 }}>
                     <span style={{ fontFamily: "'Cinzel', serif", fontSize: "0.58rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(247,240,227,0.5)" }}>
-                      {copy.currency}
+                      USD
                     </span>
-                    {(["USD", "EGP"] as CurrencyCode[]).map((code) => (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => setCurrency(code)}
-                        style={{
-                          padding: "0.22rem 0.55rem",
-                          borderRadius: "999px",
-                          border: `1px solid ${currency === code ? "rgba(232,160,0,0.6)" : "rgba(255,255,255,0.2)"}`,
-                          background: currency === code ? "rgba(232,160,0,0.18)" : "rgba(255,255,255,0.03)",
-                          color: currency === code ? "#E8A000" : "rgba(247,240,227,0.7)",
-                          fontSize: "0.63rem",
-                          letterSpacing: "0.07em",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {code}
-                      </button>
-                    ))}
                   </div>
 
                   <p style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: "3rem", fontWeight: 900, color: "#E8A000", lineHeight: 1, position: "relative" }}>
@@ -1116,7 +1099,7 @@ function PlanSuggestionContent() {
                     {`${formatCurrency(plan.perNight)} ${copy.perNight} · ${plan.form.nights} ${copy.nights}`}
                   </p>
                   <p style={{ fontSize: "0.66rem", color: "rgba(247,240,227,0.32)", marginTop: "0.25rem" }}>
-                    {`${copy.exchangeRateLabel}: 1 USD = ${USD_TO_EGP_RATE} EGP`}
+                    USD prices only
                   </p>
                   <div style={{ display: "inline-block", marginTop: "0.75rem", padding: "3px 13px", borderRadius: "20px", background: `${budgetColor}18`, border: `1px solid ${budgetColor}40`, color: budgetColor, fontFamily: "'Cinzel', serif", fontSize: "0.63rem", letterSpacing: "0.1em" }}>
                     {toLocalizedBudget(plan.form.budget)} {copy.tier}

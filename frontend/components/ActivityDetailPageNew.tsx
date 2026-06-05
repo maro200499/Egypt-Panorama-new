@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ActivityReviews from "@/components/activity/ActivityReviews";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface Activity {
@@ -847,6 +848,10 @@ export default function ActivityDetailPage({
             </div>
           </aside>
         </div>
+      </div>
+
+      <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 24px 56px" }}>
+        <ActivityReviews activityId={activity.id} activityName={activity.name} />
       </div>
 
       {/* Animations and Responsive Styles */}

@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
-import { getLocalizedPlanName, PLANS } from "@/components/subscription/subscriptionData";
+import { findPlanByRawValue, getLocalizedPlanName } from "@/components/subscription/subscriptionData";
 
 export default function MembershipSuccessPage() {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const isAr = locale === "ar";
   const planId = searchParams.get("plan") ?? "";
-  const plan = PLANS.find((item) => item.id === planId);
-  const durationLabel = plan ? (isAr ? (plan.duration === 1 ? "شهر" : "أشهر") : plan.duration === 1 ? "Month" : "Months") : "";
+  const plan = findPlanByRawValue(planId);
   const formatPrice = (value: number) => new Intl.NumberFormat(isAr ? "ar-EG" : "en-US", { maximumFractionDigits: 0 }).format(value);
   const labels = {
     plan: isAr ? "الخطة" : "Plan",
@@ -31,14 +30,14 @@ export default function MembershipSuccessPage() {
             {isAr ? "نجاح" : "Success"}
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">
-            {isAr ? "تم تفعيل الاشتراك بنجاح" : "Subscription activated successfully"}
+            {isAr ? "تم تفعيل الباقة بنجاح" : "Trip plan activated successfully"}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-amber-100/80 sm:text-base">
             {plan
               ? `${getLocalizedPlanName(plan, isAr)} ${isAr ? "أصبحت الآن مفعلة" : "is now active"}.`
               : isAr
-              ? "اشتراكك أصبح مفعلا وجاهزا للاستخدام."
-              : "Your subscription is active and ready to use."}
+              ? "أصبحت باقتك مفعلة وجاهزة للاستخدام."
+              : "Your trip plan is active and ready to use."}
           </p>
 
           {plan && (
@@ -49,11 +48,11 @@ export default function MembershipSuccessPage() {
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-amber-100/60">{labels.duration}</p>
-                <p className="mt-1 text-lg font-bold text-amber-50">{plan.duration} {durationLabel}</p>
+                <p className="mt-1 text-lg font-bold text-amber-50">{plan.duration} {isAr ? "أيام" : "days"}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-amber-100/60">{labels.price}</p>
-                <p className="mt-1 text-lg font-bold text-amber-50">{formatPrice(plan.price)} EGP</p>
+                <p className="mt-1 text-lg font-bold text-amber-50">${formatPrice(plan.price)}</p>
               </div>
             </div>
           )}

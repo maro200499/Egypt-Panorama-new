@@ -1,4 +1,6 @@
-export type PlanId = "basic" | "standard" | "premium";
+export type PlanId = "weekend" | "short-trip" | "classic" | "full-journey";
+
+export type PlanIcon = "moon" | "map" | "plane" | "globe";
 
 export type Plan = {
   id: PlanId;
@@ -6,6 +8,7 @@ export type Plan = {
   description: string;
   duration: number;
   price: number;
+  icon: PlanIcon;
   popular?: boolean;
   badge?: string;
   saveLabel?: string;
@@ -46,6 +49,7 @@ export type SubscriptionCopy = {
   expiresOn: string;
   choose: string;
   current: string;
+  perTrip: string;
   confirmTitle: string;
   confirmText: string;
   cancel: string;
@@ -55,7 +59,7 @@ export type SubscriptionCopy = {
   subscribeSuccess: string;
   subscribeFail: string;
   statusFail: string;
-  durationMonths: string;
+  durationUnit: string;
   popular: string;
   bestValue: string;
   saveLabel: string;

@@ -707,7 +707,7 @@ export const typeColors: Record<DestinationType, { bg: string; border: string; t
 };
 
 export const typeFallbackImages: Record<DestinationType, string> = {
-  "Cultural":      "/images/cultural.jfif",
+  "Cultural":      "/images/hero/pyramids.jpg",
   "Eco & Wellness":"/images/eco.jfif",
   "Desert":        "/images/texture.jfif",
   "Sea & Diving":  "/images/sharm-el-sheikh.avif",

@@ -130,10 +130,10 @@ async function LocalizedTourismCategoryPage({
             <Image
               src={coverImage}
               alt={title}
-              fill
+              width={1920}
+              height={256}
               priority
-              sizes="100vw"
-              className="object-cover"
+              className="object-cover w-full h-full"
               style={{ objectPosition: coverImagePosition ?? "center" }}
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,10,12,0.2)_0%,rgba(10,10,12,0.62)_100%)]" />

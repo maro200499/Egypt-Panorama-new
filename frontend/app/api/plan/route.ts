@@ -316,6 +316,17 @@ async function fetchBackendRows<T>(path: string): Promise<T[]> {
   return payload.data;
 }
 
+async function fetchBackendObject<T extends Record<string, unknown>>(path: string): Promise<T> {
+  const response = await fetch(buildBackendUrl(path), { cache: "no-store" });
+  const payload = await parseBackendResponse<T>(response);
+
+  if (!response.ok || payload.status !== "success" || !payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
+    throw new Error(payload.message ?? `Failed to fetch ${path}`);
+  }
+
+  return payload.data;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -331,9 +342,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [destinations, statsRows, companiesRows] = await Promise.all([
+    const [destinations, stats, companiesRows] = await Promise.all([
       fetchBackendRows<DestinationRow>("/api/destinations/get_all.php"),
-      fetchBackendRows<PriceStatsRow>("/api/activities/price_stats.php"),
+      fetchBackendObject<PriceStatsRow>("/api/activities/price_stats.php"),
       fetchBackendRows<CompanyRow>("/api/companies/get_all.php"),
     ]);
 
@@ -350,7 +361,6 @@ export async function GET(request: Request) {
     const resolvedDestinationId = toNumber(destination.id, 0);
     const resolvedDestinationName = String(destination.name ?? destinationName);
 
-    const stats = statsRows[0] ?? { min_price: 0, max_price: 0, avg_price: 0 };
     const budgetMap = buildBudgetMapFromStats(stats);
     const budgetTier = budget === "premium" ? "premium" : budget === "budget" ? "budget" : "standard";
     const selectedRange = budgetMap[budgetTier];

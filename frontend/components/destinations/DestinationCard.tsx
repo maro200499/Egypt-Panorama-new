@@ -15,7 +15,7 @@ interface Props {
 export default function DestinationCard({ destination: d, index = 0, isAr = false }: Props) {
   const [imgError, setImgError] = useState(false);
 
-  const src = imgError ? (typeFallbackImages[d.type] ?? "/images/cultural.jfif") : d.coverImage;
+  const src = imgError ? (typeFallbackImages[d.type] ?? "/images/hero/pyramids.jpg") : d.coverImage;
 
   const delay = `${(index % 3) * 0.1}s`;
 
